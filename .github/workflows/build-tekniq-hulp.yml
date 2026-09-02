@@ -111,7 +111,8 @@ jobs:
             -Uri 'https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip' `
             -OutFile 'windows-x64-release.zip'
           Expand-Archive -Path 'windows-x64-release.zip' -DestinationPath 'windows-x64-release'
-          $enginePath = Join-Path '${{ steps.flutter.outputs['CACHE-PATH'] }}' 'bin\cache\artifacts\engine\windows-x64-release'
+          $enginePath = Join-Path $env:FLUTTER_ROOT 'bin\cache\artifacts\engine\windows-x64-release'
+          New-Item -ItemType Directory -Path $enginePath -Force | Out-Null
           Copy-Item -Path 'windows-x64-release\*' -Destination $enginePath -Recurse -Force
 
       - name: Apply RustDesk Flutter compatibility patch
