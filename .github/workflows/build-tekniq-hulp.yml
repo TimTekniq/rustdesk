@@ -121,7 +121,14 @@ jobs:
           flutter_root="$(dirname "$(dirname "$(which flutter)")")"
           cp .github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff "$flutter_root/"
           cd "$flutter_root"
-          git apply flutter_3.24.4_dropdown_menu_enableFilter.diff
+          if git apply --check flutter_3.24.4_dropdown_menu_enableFilter.diff; then
+            git apply flutter_3.24.4_dropdown_menu_enableFilter.diff
+          elif git apply --reverse --check flutter_3.24.4_dropdown_menu_enableFilter.diff; then
+            echo "Flutter compatibility patch is already applied in the restored cache."
+          else
+            echo "Flutter compatibility patch does not match this Flutter checkout." >&2
+            exit 1
+          fi
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
