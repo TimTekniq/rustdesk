@@ -59,6 +59,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (bind.isCustomClient()) {
+      return _buildBlock(child: buildTekniqCustomerPage(context));
+    }
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
         child: Row(
@@ -69,6 +72,189 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         if (!isIncomingOnly) Expanded(child: buildRightPane(context)),
       ],
     ));
+  }
+
+  Widget buildTekniqCustomerPage(BuildContext context) {
+    const ink = Color(0xFF162033);
+    const muted = Color(0xFF667085);
+    const surface = Color(0xFFF7F8FA);
+    const border = Color(0xFFE4E7EC);
+    const brand = Color(0xFFFFC400);
+
+    return ChangeNotifierProvider.value(
+      value: gFFI.serverModel,
+      child: Consumer<ServerModel>(
+        builder: (context, model, child) {
+          final id = model.serverId.text.trim();
+          final password = model.serverPasswd.text.trim();
+          final ready = id.isNotEmpty && password.isNotEmpty;
+
+          return Container(
+            color: Colors.white,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(42, 28, 42, 30),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/tekniq-mark.png',
+                            width: 54,
+                            height: 54,
+                            filterQuality: FilterQuality.high,
+                          ),
+                          const SizedBox(width: 14),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tekniq Hulp',
+                                style: TextStyle(
+                                  color: ink,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Veilige hulp op afstand',
+                                style: TextStyle(color: muted, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                      const Text(
+                        'Geef deze gegevens door aan uw Tekniq-medewerker.',
+                        style: TextStyle(
+                          color: ink,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: surface,
+                          border: Border.all(color: border),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'UW CODE',
+                              style: TextStyle(
+                                color: muted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            SelectableText(
+                              id.isEmpty ? 'Even geduld…' : id,
+                              style: const TextStyle(
+                                color: ink,
+                                fontSize: 34,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 15),
+                              child: Divider(height: 1, color: border),
+                            ),
+                            const Text(
+                              'EENMALIG WACHTWOORD',
+                              style: TextStyle(
+                                color: muted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            SelectableText(
+                              password.isEmpty ? 'Wordt aangemaakt…' : password,
+                              style: const TextStyle(
+                                color: ink,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            width: 9,
+                            height: 9,
+                            decoration: BoxDecoration(
+                              color: ready ? const Color(0xFF12B76A) : brand,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            ready ? 'Klaar voor verbinding' : 'Verbinding voorbereiden…',
+                            style: const TextStyle(color: muted, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () {
+                          SystemNavigator.pop();
+                          if (isWindows) {
+                            exit(0);
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ink,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Hulp beëindigen',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Sluit documenten die niet nodig zijn. U kunt de hulp altijd stoppen met de knop hierboven.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: muted, fontSize: 12, height: 1.4),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Gebaseerd op RustDesk · Broncode en privacy: help.tekniq.nl/hulp-op-afstand',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Color(0xFF98A2B3), fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildBlock({required Widget child}) {
@@ -855,6 +1041,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     if (bind.isIncomingOnly()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _updateWindowSize();
+      });
+    } else if (bind.isCustomClient()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await windowManager.setSize(const Size(560, 640));
+        await windowManager.setMinimumSize(const Size(560, 640));
+        await windowManager.setMaximumSize(const Size(560, 640));
+        await windowManager.setResizable(false);
       });
     }
     WidgetsBinding.instance.addObserver(this);
