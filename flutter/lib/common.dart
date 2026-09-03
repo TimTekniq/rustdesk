@@ -599,6 +599,9 @@ class MyTheme {
   }
 
   static ThemeMode currentThemeMode() {
+    if (bind.isCustomClient()) {
+      return ThemeMode.dark;
+    }
     final preference = getThemeModePreference();
     if (preference == ThemeMode.system) {
       if (WidgetsBinding.instance.platformDispatcher.platformBrightness ==

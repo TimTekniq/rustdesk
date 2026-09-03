@@ -70,8 +70,42 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  build-windows:
+  validate-interface:
     needs: generate-bridge
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore generated bridge
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact
+          path: .
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Analyze Tekniq interface
+        shell: bash
+        run: |
+          sed -i -e 's/extended_text: 14.0.0/extended_text: 13.0.0/g' flutter/pubspec.yaml
+          pushd flutter
+          flutter pub get
+          flutter analyze --no-fatal-infos --no-fatal-warnings \
+            lib/common.dart \
+            lib/desktop/pages/desktop_home_page.dart \
+            lib/desktop/pages/server_page.dart
+          popd
+
+  build-windows:
+    needs: [generate-bridge, validate-interface]
     runs-on: windows-2022
     steps:
       - name: Checkout source

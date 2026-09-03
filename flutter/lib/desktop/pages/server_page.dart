@@ -22,6 +22,18 @@ import '../../models/file_model.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
 
+const _tekniqBackground = Color(0xFF0B1120);
+const _tekniqPanel = Color(0xFF111827);
+const _tekniqPanelRaised = Color(0xFF172033);
+const _tekniqPanelHover = Color(0xFF26395F);
+const _tekniqLine = Color(0xFF334155);
+const _tekniqYellow = Color(0xFFF8BF00);
+const _tekniqText = Color(0xFFEEF3FB);
+const _tekniqMuted = Color(0xFF9AA8BA);
+const _tekniqDanger = Color(0xFF7F1D1D);
+const _tekniqDangerText = Color(0xFFFECACA);
+const _tekniqButtonText = Color(0xFF17120A);
+
 class DesktopServerPage extends StatefulWidget {
   const DesktopServerPage({Key? key}) : super(key: key);
 
@@ -83,7 +95,9 @@ class _DesktopServerPageState extends State<DesktopServerPage>
       child: Consumer<ServerModel>(
         builder: (context, serverModel, child) {
           final body = Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
+            backgroundColor: bind.isCustomClient()
+                ? _tekniqBackground
+                : Theme.of(context).colorScheme.background,
             body: ConnectionManager(),
           );
           return isLinux
@@ -92,8 +106,10 @@ class _DesktopServerPageState extends State<DesktopServerPage>
                   context,
                   Container(
                     decoration: BoxDecoration(
-                        border:
-                            Border.all(color: MyTheme.color(context).border!)),
+                        border: Border.all(
+                            color: bind.isCustomClient()
+                                ? _tekniqLine
+                                : MyTheme.color(context).border!)),
                     child: body,
                   ));
         },
@@ -256,7 +272,9 @@ class ConnectionManagerState extends State<ConnectionManager>
                                   ))),
                   ]);
                   return Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
+                    color: bind.isCustomClient()
+                        ? _tekniqBackground
+                        : Theme.of(context).scaffoldBackgroundColor,
                     child: row,
                   );
                 },
@@ -295,7 +313,9 @@ class ConnectionManagerState extends State<ConnectionManager>
                 windowManager.startDragging();
               },
               child: Container(
-                color: Theme.of(context).colorScheme.background,
+                color: bind.isCustomClient()
+                    ? _tekniqBackground
+                    : Theme.of(context).colorScheme.background,
               ),
             ),
           ),
@@ -441,17 +461,24 @@ class _CmHeaderState extends State<_CmHeader>
   Widget build(BuildContext context) {
     super.build(context);
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.0),
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            Color(0xff00bfe1),
-            Color(0xff0071ff),
-          ],
-        ),
-      ),
+      decoration: bind.isCustomClient()
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: _tekniqLine),
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [_tekniqPanelRaised, _tekniqPanel],
+              ),
+            )
+          : BoxDecoration(
+              borderRadius: BorderRadius.circular(10.0),
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [Color(0xff00bfe1), Color(0xff0071ff)],
+              ),
+            ),
       margin: EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
       padding: EdgeInsets.only(
         top: 10.0,
@@ -472,7 +499,7 @@ class _CmHeaderState extends State<_CmHeader>
                     child: Text(
                   client.name,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: bind.isCustomClient() ? _tekniqText : Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                     overflow: TextOverflow.ellipsis,
@@ -482,7 +509,11 @@ class _CmHeaderState extends State<_CmHeader>
                 FittedBox(
                   child: Text(
                     "(${client.peerId})",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(
+                        color: bind.isCustomClient()
+                            ? _tekniqMuted
+                            : Colors.white,
+                        fontSize: 14),
                   ),
                 ),
                 if (client.type_() == ClientType.terminal)
@@ -523,7 +554,10 @@ class _CmHeaderState extends State<_CmHeader>
                               ? translate("Disconnected")
                               : translate("Connected")
                           : "${translate("Request access to your device")}...",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                          color: bind.isCustomClient()
+                              ? _tekniqText
+                              : Colors.white),
                     ).marginOnly(right: 8.0),
                     if (client.authorized)
                       Obx(
@@ -531,7 +565,10 @@ class _CmHeaderState extends State<_CmHeader>
                           formatDurationToTime(
                             Duration(seconds: _time.value),
                           ),
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                              color: bind.isCustomClient()
+                                  ? _tekniqMuted
+                                  : Colors.white),
                         ),
                       )
                   ],
@@ -583,14 +620,14 @@ class _CmHeaderState extends State<_CmHeader>
       height: 70,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: str2color(client.name),
+        color: bind.isCustomClient() ? _tekniqYellow : str2color(client.name),
         borderRadius: BorderRadius.circular(15.0),
       ),
       child: Text(
         client.name.isNotEmpty ? client.name[0] : '?',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: bind.isCustomClient() ? _tekniqButtonText : Colors.white,
           fontSize: 55,
         ),
       ),
@@ -617,9 +654,13 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
       waitDuration: Duration.zero,
       child: Container(
         decoration: BoxDecoration(
-          color: enabled
-              ? (canModify ? MyTheme.accent : MyTheme.accent.withOpacity(0.6))
-              : Colors.grey[700],
+          color: bind.isCustomClient()
+              ? (enabled ? _tekniqYellow : _tekniqPanelHover)
+              : (enabled
+                  ? (canModify
+                      ? MyTheme.accent
+                      : MyTheme.accent.withOpacity(0.6))
+                  : Colors.grey[700]),
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: EdgeInsets.all(8.0),
@@ -634,7 +675,9 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
               Expanded(
                 child: Icon(
                   iconData,
-                  color: Colors.white,
+                  color: bind.isCustomClient()
+                      ? (enabled ? _tekniqButtonText : _tekniqMuted)
+                      : Colors.white,
                 ),
               ),
             ],
@@ -658,10 +701,13 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
       padding: EdgeInsets.all(5.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10.0),
-        color: Theme.of(context).colorScheme.background,
+        color: bind.isCustomClient()
+            ? _tekniqPanel
+            : Theme.of(context).colorScheme.background,
+        border: bind.isCustomClient() ? Border.all(color: _tekniqLine) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(bind.isCustomClient() ? 0.35 : 0.2),
             spreadRadius: 1,
             blurRadius: 1,
             offset: Offset(0, 1.5),
@@ -673,7 +719,10 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
         children: [
           Text(
             translate("Permissions"),
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: bind.isCustomClient() ? _tekniqText : null,
+                fontSize: 16,
+                fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ).marginOnly(left: 4.0, bottom: 8.0),
           Expanded(
@@ -879,7 +928,9 @@ class _CmControlPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: buildButton(context,
-                    color: MyTheme.accent,
+                    color: bind.isCustomClient()
+                        ? _tekniqYellow
+                        : MyTheme.accent,
                     onClick: null, onTapDown: (details) async {
                   final devicesInfo =
                       await AudioInput.getDevicesInfo(true, true);
@@ -936,11 +987,15 @@ class _CmControlPanel extends StatelessWidget {
                 },
                     icon: Icon(
                       Icons.call_rounded,
-                      color: Colors.white,
+                      color: bind.isCustomClient()
+                          ? _tekniqButtonText
+                          : Colors.white,
                       size: 14,
                     ),
                     text: "Audio input",
-                    textColor: Colors.white),
+                    textColor: bind.isCustomClient()
+                        ? _tekniqButtonText
+                        : Colors.white),
               ),
               Expanded(
                 child: buildButton(
@@ -965,15 +1020,21 @@ class _CmControlPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: buildButton(context,
-                    color: MyTheme.accent,
+                    color: bind.isCustomClient()
+                        ? _tekniqYellow
+                        : MyTheme.accent,
                     onClick: () => handleVoiceCall(true),
                     icon: Icon(
                       Icons.call_rounded,
-                      color: Colors.white,
+                      color: bind.isCustomClient()
+                          ? _tekniqButtonText
+                          : Colors.white,
                       size: 14,
                     ),
                     text: "Accept",
-                    textColor: Colors.white),
+                    textColor: bind.isCustomClient()
+                        ? _tekniqButtonText
+                        : Colors.white),
               ),
               Expanded(
                 child: buildButton(
@@ -1005,33 +1066,41 @@ class _CmControlPanel extends StatelessWidget {
           offstage: !showElevation,
           child: buildButton(
             context,
-            color: MyTheme.accent,
+            color:
+                bind.isCustomClient() ? _tekniqYellow : MyTheme.accent,
             onClick: () {
               handleElevate(context);
               windowManager.minimize();
             },
             icon: Icon(
               Icons.security_rounded,
-              color: Colors.white,
+              color: bind.isCustomClient() ? _tekniqButtonText : Colors.white,
               size: 14,
             ),
             text: 'Elevate',
-            textColor: Colors.white,
+            textColor:
+                bind.isCustomClient() ? _tekniqButtonText : Colors.white,
           ),
         ),
         Row(
           children: [
             Expanded(
               child: buildButton(context,
-                  color: Colors.redAccent,
+                  color: bind.isCustomClient()
+                      ? _tekniqDanger
+                      : Colors.redAccent,
                   onClick: handleDisconnect,
                   text: 'Disconnect',
                   icon: Icon(
                     Icons.link_off_rounded,
-                    color: Colors.white,
+                    color: bind.isCustomClient()
+                        ? _tekniqDangerText
+                        : Colors.white,
                     size: 14,
                   ),
-                  textColor: Colors.white),
+                  textColor: bind.isCustomClient()
+                      ? _tekniqDangerText
+                      : Colors.white),
             ),
           ],
         )
@@ -1045,10 +1114,13 @@ class _CmControlPanel extends StatelessWidget {
       children: [
         Expanded(
             child: buildButton(context,
-                color: MyTheme.accent,
+                color: bind.isCustomClient()
+                    ? _tekniqPanelRaised
+                    : MyTheme.accent,
                 onClick: handleClose,
                 text: 'Close',
-                textColor: Colors.white)),
+                textColor:
+                    bind.isCustomClient() ? _tekniqText : Colors.white)),
       ],
     ).marginOnly(bottom: buttonBottomMargin);
   }
@@ -1065,7 +1137,10 @@ class _CmControlPanel extends StatelessWidget {
       children: [
         Offstage(
           offstage: !showElevation || !showAccept,
-          child: buildButton(context, color: Colors.green[700], onClick: () {
+          child: buildButton(context,
+              color: bind.isCustomClient()
+                  ? _tekniqYellow
+                  : Colors.green[700], onClick: () {
             handleAccept(context);
             handleElevate(context);
             windowManager.minimize();
@@ -1073,10 +1148,12 @@ class _CmControlPanel extends StatelessWidget {
               text: 'Accept and Elevate',
               icon: Icon(
                 Icons.security_rounded,
-                color: Colors.white,
+                color:
+                    bind.isCustomClient() ? _tekniqButtonText : Colors.white,
                 size: 14,
               ),
-              textColor: Colors.white,
+              textColor:
+                  bind.isCustomClient() ? _tekniqButtonText : Colors.white,
               tooltip: 'accept_and_elevate_btn_tooltip'),
         ),
         Row(
@@ -1088,13 +1165,17 @@ class _CmControlPanel extends StatelessWidget {
                   children: [
                     buildButton(
                       context,
-                      color: MyTheme.accent,
+                      color: bind.isCustomClient()
+                          ? _tekniqYellow
+                          : MyTheme.accent,
                       onClick: () {
                         handleAccept(context);
                         windowManager.minimize();
                       },
                       text: 'Accept',
-                      textColor: Colors.white,
+                      textColor: bind.isCustomClient()
+                          ? _tekniqButtonText
+                          : Colors.white,
                     ),
                   ],
                 ),
@@ -1102,11 +1183,16 @@ class _CmControlPanel extends StatelessWidget {
             Expanded(
               child: buildButton(
                 context,
-                color: Colors.transparent,
-                border: Border.all(color: Colors.grey),
+                color: bind.isCustomClient()
+                    ? _tekniqPanelRaised
+                    : Colors.transparent,
+                border: Border.all(
+                    color: bind.isCustomClient()
+                        ? _tekniqLine
+                        : Colors.grey),
                 onClick: handleDisconnect,
                 text: 'Cancel',
-                textColor: null,
+                textColor: bind.isCustomClient() ? _tekniqText : null,
               ),
             ),
           ],

@@ -75,11 +75,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget buildTekniqCustomerPage(BuildContext context) {
-    const ink = Color(0xFF162033);
-    const muted = Color(0xFF667085);
-    const surface = Color(0xFFF7F8FA);
-    const border = Color(0xFFE4E7EC);
-    const brand = Color(0xFFFFC400);
+    const background = Color(0xFF0B1120);
+    const ink = Color(0xFFEEF3FB);
+    const muted = Color(0xFF9AA8BA);
+    const surface = Color(0xFF111827);
+    const border = Color(0xFF334155);
+    const brand = Color(0xFFF8BF00);
 
     return ChangeNotifierProvider.value(
       value: gFFI.serverModel,
@@ -90,7 +91,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           final ready = id.isNotEmpty && password.isNotEmpty;
 
           return Container(
-            color: Colors.white,
+            color: background,
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(42, 28, 42, 30),
@@ -222,8 +223,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           }
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor: ink,
-                          foregroundColor: Colors.white,
+                          backgroundColor: brand,
+                          foregroundColor: const Color(0xFF17120A),
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -244,7 +245,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       const Text(
                         'Gebaseerd op RustDesk · Broncode en privacy: help.tekniq.nl/hulp-op-afstand',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF98A2B3), fontSize: 10),
+                        style: TextStyle(color: Color(0xFF6F7E93), fontSize: 10),
                       ),
                     ],
                   ),
