@@ -3993,13 +3993,18 @@ bool get isCustomClient {
   return _isCustomClient!;
 }
 
+bool get isTekniqCustomer => isCustomClient && appName == 'Tekniq Hulp';
+bool get isTekniqOperator => isCustomClient && appName == 'Tekniq Beheer';
+bool get isTekniqClient => isTekniqCustomer || isTekniqOperator;
+
 get defaultOptionLang => isCustomClient ? 'default' : '';
-get defaultOptionTheme => isCustomClient ? 'system' : '';
+get defaultOptionTheme => isTekniqClient ? 'dark' : (isCustomClient ? 'system' : '');
 get defaultOptionYes => isCustomClient ? 'Y' : '';
 get defaultOptionNo => isCustomClient ? 'N' : '';
 get defaultOptionWhitelist => isCustomClient ? ',' : '';
 get defaultOptionAccessMode => isCustomClient ? 'custom' : '';
-get defaultOptionApproveMode => isCustomClient ? 'password-click' : '';
+get defaultOptionApproveMode =>
+    isTekniqCustomer ? 'click' : (isCustomClient ? 'password-click' : '');
 
 bool whitelistNotEmpty() {
   // https://rustdesk.com/docs/en/self-host/client-configuration/advanced-settings/#whitelist

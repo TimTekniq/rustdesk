@@ -100,13 +100,29 @@ jobs:
           flutter pub get
           flutter analyze --no-fatal-infos --no-fatal-warnings \
             lib/common.dart \
+            lib/common/widgets/toolbar.dart \
+            lib/desktop/pages/connection_page.dart \
             lib/desktop/pages/desktop_home_page.dart \
-            lib/desktop/pages/server_page.dart
+            lib/desktop/pages/server_page.dart \
+            lib/desktop/widgets/remote_toolbar.dart \
+            lib/main.dart
           popd
 
   build-windows:
     needs: [generate-bridge, validate-interface]
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: hulp
+            app_name: Tekniq Hulp
+            file_name: TekniqHulp.exe
+            artifact_name: TekniqHulp-windows-x64
+          - variant: beheer
+            app_name: Tekniq Beheer
+            file_name: TekniqBeheer.exe
+            artifact_name: TekniqBeheer-windows-x64
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -121,7 +137,18 @@ jobs:
 
       - name: Apply Tekniq branding
         shell: pwsh
-        run: ./scripts/apply-tekniq-branding.ps1
+        run: ./scripts/apply-tekniq-branding.ps1 -Variant '${{ matrix.variant }}'
+
+      - name: Generate canonical Tekniq application icon
+        shell: pwsh
+        run: |
+          $magick = Get-Command magick -ErrorAction Stop
+          & $magick.Source -background none '.\flutter\assets\tekniq-mark.svg' `
+            -resize 512x512 '.\res\icon.png'
+          & $magick.Source -background none '.\flutter\assets\tekniq-mark.svg' `
+            -define icon:auto-resize=256,128,64,48,32,16 '.\res\icon.ico'
+          Copy-Item -LiteralPath '.\res\icon.ico' `
+            -Destination '.\flutter\windows\runner\resources\app_icon.ico' -Force
 
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
@@ -196,18 +223,18 @@ jobs:
         shell: pwsh
         run: |
           python .\build.py --portable --flutter --hwcodec --vram
-          Move-Item -LiteralPath '.\rustdesk-1.4.9-install.exe' -Destination '.\TekniqHulp.exe'
+          Move-Item -LiteralPath '.\rustdesk-1.4.9-install.exe' -Destination '.\${{ matrix.file_name }}'
 
       - name: Record checksum and file metadata
         shell: pwsh
         run: |
-          Get-FileHash -LiteralPath '.\TekniqHulp.exe' -Algorithm SHA256 | Format-List
-          Get-Item -LiteralPath '.\TekniqHulp.exe' | Select-Object Name, Length, LastWriteTime | Format-List
+          Get-FileHash -LiteralPath '.\${{ matrix.file_name }}' -Algorithm SHA256 | Format-List
+          Get-Item -LiteralPath '.\${{ matrix.file_name }}' | Select-Object Name, Length, LastWriteTime | Format-List
 
-      - name: Upload Tekniq Hulp
+      - name: Upload ${{ matrix.app_name }}
         uses: actions/upload-artifact@v4
         with:
-          name: TekniqHulp-windows-x64
-          path: TekniqHulp.exe
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.file_name }}
           if-no-files-found: error
           retention-days: 7

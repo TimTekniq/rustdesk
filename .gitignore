@@ -16,6 +16,7 @@ cert.pfx
 *.bak
 *png
 *svg
+!flutter/assets/tekniq-mark.svg
 *jpg
 sciter.dll
 **pdb

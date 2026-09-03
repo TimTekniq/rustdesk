@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
@@ -59,8 +60,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (bind.isCustomClient()) {
+    if (isTekniqCustomer) {
       return _buildBlock(child: buildTekniqCustomerPage(context));
+    }
+    if (isTekniqOperator) {
+      return _buildBlock(child: const ConnectionPage());
     }
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
@@ -87,8 +91,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       child: Consumer<ServerModel>(
         builder: (context, model, child) {
           final id = model.serverId.text.trim();
-          final password = model.serverPasswd.text.trim();
-          final ready = id.isNotEmpty && password.isNotEmpty;
+          final ready = id.isNotEmpty;
 
           return Container(
             color: background,
@@ -102,11 +105,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     children: [
                       Row(
                         children: [
-                          Image.asset(
-                            'assets/tekniq-mark.png',
+                          SvgPicture.asset(
+                            'assets/tekniq-mark.svg',
                             width: 54,
                             height: 54,
-                            filterQuality: FilterQuality.high,
                           ),
                           const SizedBox(width: 14),
                           const Column(
@@ -130,7 +132,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ),
                       const SizedBox(height: 30),
                       const Text(
-                        'Geef deze gegevens door aan uw Tekniq-medewerker.',
+                        'Geef alleen deze code door aan uw Tekniq-medewerker.',
                         style: TextStyle(
                           color: ink,
                           fontSize: 17,
@@ -168,29 +170,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                 fontSize: 34,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1.5,
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 15),
-                              child: Divider(height: 1, color: border),
-                            ),
-                            const Text(
-                              'EENMALIG WACHTWOORD',
-                              style: TextStyle(
-                                color: muted,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            SelectableText(
-                              password.isEmpty ? 'Wordt aangemaakt…' : password,
-                              style: const TextStyle(
-                                color: ink,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
                               ),
                             ),
                           ],
@@ -884,6 +863,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   void initState() {
     super.initState();
+    _applyTekniqRoleDefaults();
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       final error = await bind.mainGetError();
@@ -1043,15 +1023,56 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _updateWindowSize();
       });
-    } else if (bind.isCustomClient()) {
+    } else if (isTekniqCustomer) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await windowManager.setSize(const Size(560, 640));
         await windowManager.setMinimumSize(const Size(560, 640));
         await windowManager.setMaximumSize(const Size(560, 640));
         await windowManager.setResizable(false);
+        await windowManager.center();
+      });
+    } else if (isTekniqOperator) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await windowManager.setSize(const Size(1000, 700));
+        await windowManager.setMinimumSize(const Size(900, 620));
+        await windowManager.setResizable(true);
+        await windowManager.center();
       });
     }
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _applyTekniqRoleDefaults() {
+    if (isTekniqCustomer) {
+      const options = <String, String>{
+        kOptionApproveMode: 'click',
+        kOptionEnableKeyboard: 'Y',
+        kOptionEnableAudio: 'Y',
+        kOptionEnableClipboard: 'Y',
+        kOptionEnableFileTransfer: 'N',
+        kOptionEnableCamera: 'N',
+        kOptionEnableTerminal: 'N',
+        kOptionEnableTunnel: 'N',
+        kOptionEnableRemoteRestart: 'N',
+        kOptionEnableRecordSession: 'N',
+        kOptionEnableBlockInput: 'N',
+        kOptionEnableRemotePrinter: 'N',
+        kOptionEnablePermChangeInAcceptWindow: 'N',
+      };
+      for (final option in options.entries) {
+        bind.mainSetOption(key: option.key, value: option.value);
+      }
+      Future.microtask(gFFI.serverModel.updatePasswordModel);
+    } else if (isTekniqOperator) {
+      // A customer may view the operator screen, but must never control it.
+      bind.mainSetOption(key: kOptionEnableKeyboard, value: 'N');
+      bind.mainSetOption(key: kOptionEnableFileTransfer, value: 'N');
+      bind.mainSetOption(key: kOptionEnableClipboard, value: 'N');
+      bind.mainSetOption(
+        key: kOptionEnablePermChangeInAcceptWindow,
+        value: 'N',
+      );
+    }
   }
 
   _updateWindowSize() {

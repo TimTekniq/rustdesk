@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/common/widgets/connection_page_title.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/popup_menu.dart';
@@ -303,6 +304,9 @@ class _ConnectionPageState extends State<ConnectionPage>
 
   @override
   Widget build(BuildContext context) {
+    if (isTekniqOperator) {
+      return _buildTekniqOperatorPage(context);
+    }
     final isOutgoingOnly = bind.isOutgoingOnly();
     return Column(
       children: [
@@ -322,6 +326,127 @@ class _ConnectionPageState extends State<ConnectionPage>
         if (!isOutgoingOnly) const Divider(height: 1),
         if (!isOutgoingOnly) OnlineStatusWidget()
       ],
+    );
+  }
+
+  Widget _buildTekniqOperatorPage(BuildContext context) {
+    const background = Color(0xFF0B1120);
+    const surface = Color(0xFF111827);
+    const border = Color(0xFF334155);
+    const yellow = Color(0xFFF8BF00);
+    const text = Color(0xFFEEF3FB);
+    const muted = Color(0xFF9AA8BA);
+    updateTextAndPreserveSelection(_idEditingController, _idController.text);
+
+    return Container(
+      color: background,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(48),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/tekniq-mark.svg',
+                      width: 64,
+                      height: 64,
+                    ),
+                    const SizedBox(width: 18),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tekniq Beheer',
+                          style: TextStyle(
+                            color: text,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'Hulp op afstand',
+                          style: TextStyle(color: muted, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 48),
+                const Text(
+                  'Voer de code van de klant in',
+                  style: TextStyle(
+                    color: text,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _idEditingController,
+                  focusNode: _idFocusNode,
+                  autofocus: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  keyboardType: TextInputType.visiblePassword,
+                  inputFormatters: [IDTextInputFormatter()],
+                  onChanged: (value) => _idController.id = value,
+                  onSubmitted: (_) => onConnect(),
+                  style: const TextStyle(
+                    color: text,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Bijvoorbeeld 456 296 776',
+                    hintStyle: const TextStyle(color: muted, fontSize: 18),
+                    filled: true,
+                    fillColor: surface,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 20,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: border),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: yellow, width: 2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: onConnect,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: yellow,
+                    foregroundColor: const Color(0xFF17120A),
+                    minimumSize: const Size.fromHeight(58),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Verbinden',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'De klant hoeft alleen de verbinding toe te staan. Er is geen wachtwoord nodig.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: muted, fontSize: 13, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

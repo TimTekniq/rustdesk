@@ -180,6 +180,9 @@ class ConnectionManagerState extends State<ConnectionManager>
   @override
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
+    if (isTekniqCustomer) {
+      return _buildTekniqCustomerManager(serverModel);
+    }
     pointerHandler(PointerEvent e) {
       if (serverModel.cmHiddenTimer != null) {
         serverModel.cmHiddenTimer!.cancel();
@@ -283,6 +286,149 @@ class ConnectionManagerState extends State<ConnectionManager>
           );
   }
 
+  Widget _buildTekniqCustomerManager(ServerModel serverModel) {
+    final client = serverModel.clients.firstOrNull;
+    final waiting = client == null;
+    final disconnected = client?.disconnected == true;
+    final authorized = client?.authorized == true && !disconnected;
+    final isScreenShare = client?.fromSwitch == true;
+
+    final title = waiting
+        ? 'Tekniq Hulp'
+        : disconnected
+            ? 'De hulp is beëindigd'
+            : authorized
+                ? isScreenShare
+                    ? 'Tekniq toont een scherm'
+                    : 'Tekniq helpt nu mee'
+                : isScreenShare
+                    ? 'Tekniq wil een scherm tonen'
+                    : 'Een Tekniq-medewerker wil helpen';
+    final message = waiting
+        ? 'Wacht op de Tekniq-medewerker.'
+        : disconnected
+            ? 'U kunt dit venster veilig sluiten.'
+            : authorized
+                ? 'U houdt altijd zelf de controle en kunt de hulp direct stoppen.'
+                : 'Klik hieronder om deze verbinding eenmalig toe te staan.';
+
+    return Container(
+      color: _tekniqBackground,
+      child: Column(
+        children: [
+          buildTitleBar(),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 18, 32, 34),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/tekniq-mark.svg',
+                        width: 72,
+                        height: 72,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: _tekniqText,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: _tekniqMuted,
+                          fontSize: 15,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 34),
+                      if (!waiting && !disconnected && !authorized)
+                        FilledButton(
+                          onPressed: () {
+                            serverModel.sendLoginResponse(client!, true);
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tekniqYellow,
+                            foregroundColor: _tekniqButtonText,
+                            minimumSize: const Size.fromHeight(58),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Hulp toestaan',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      if (authorized)
+                        FilledButton(
+                          onPressed: () =>
+                              bind.cmCloseConnection(connId: client!.id),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tekniqDanger,
+                            foregroundColor: _tekniqDangerText,
+                            minimumSize: const Size.fromHeight(58),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Hulp beëindigen',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      if (disconnected)
+                        FilledButton(
+                          onPressed: () async {
+                            await bind.cmRemoveDisconnectedConnection(
+                              connId: client!.id,
+                            );
+                            await windowManager.close();
+                          },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tekniqYellow,
+                            foregroundColor: _tekniqButtonText,
+                            minimumSize: const Size.fromHeight(58),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sluiten',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget buildSidePage() {
     final selected = gFFI.serverModel.tabController.state.value.selected;
     if (selected < 0 || selected >= gFFI.serverModel.clients.length) {
@@ -376,6 +522,7 @@ Widget buildConnectionCard(Client client) {
         client.type_() == ClientType.file ||
                 client.type_() == ClientType.portForward ||
                 client.type_() == ClientType.terminal ||
+                (isTekniqOperator && client.fromSwitch) ||
                 client.disconnected
             ? Offstage()
             : _PrivilegeBoard(client: client),
@@ -397,7 +544,13 @@ class _AppIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 4.0),
-      child: loadIcon(30),
+      child: isTekniqClient
+          ? SvgPicture.asset(
+              'assets/tekniq-mark.svg',
+              width: 26,
+              height: 26,
+            )
+          : loadIcon(30),
     );
   }
 }
@@ -914,6 +1067,46 @@ class _CmControlPanel extends StatelessWidget {
   }
 
   buildAuthorized(BuildContext context) {
+    if (isTekniqOperator && client.fromSwitch) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 16, 12, 20),
+            child: Text(
+              'Uw scherm wordt alleen bekeken. De klant kan uw muis en toetsenbord niet bedienen.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _tekniqMuted, height: 1.4),
+            ),
+          ),
+          buildButton(
+            context,
+            color: _tekniqYellow,
+            onClick: () => handleSwitchBack(context),
+            icon: const Icon(
+              Icons.reply_rounded,
+              color: _tekniqButtonText,
+              size: 16,
+            ),
+            text: 'Terug naar klant',
+            textColor: _tekniqButtonText,
+          ),
+          buildButton(
+            context,
+            color: _tekniqDanger,
+            onClick: handleDisconnect,
+            icon: const Icon(
+              Icons.link_off_rounded,
+              color: _tekniqDangerText,
+              size: 16,
+            ),
+            text: 'Verbinding verbreken',
+            textColor: _tekniqDangerText,
+          ),
+        ],
+      ).marginOnly(bottom: buttonBottomMargin);
+    }
     final bool canElevate = bind.cmCanElevate();
     final model = Provider.of<ServerModel>(context);
     final showElevation = canElevate &&
@@ -1059,7 +1252,7 @@ class _CmControlPanel extends StatelessWidget {
               color: Colors.purple,
               onClick: () => handleSwitchBack(context),
               icon: Icon(Icons.reply, color: Colors.white),
-              text: "Switch Sides",
+              text: isTekniqOperator ? 'Terug naar klant' : "Switch Sides",
               textColor: Colors.white),
         ),
         Offstage(

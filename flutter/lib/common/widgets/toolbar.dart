@@ -337,6 +337,59 @@ List<TTextMenu> toolbarControls(BuildContext context, String id, FFI ffi) {
   final isDefaultConn = ffi.connType == ConnType.defaultConn;
   final isWaylandPeer = pi.platform == kPeerPlatformLinux && pi.isWayland;
 
+  if (isTekniqOperator) {
+    final items = <TTextMenu>[];
+    if (isDefaultConn &&
+        perms['keyboard'] != false &&
+        ffi.elevationModel.showRequestMenu) {
+      items.add(TTextMenu(
+        child: const Text('Meer rechten aanvragen'),
+        onPressed: () =>
+            showRequestElevationDialog(sessionId, ffi.dialogManager),
+      ));
+    }
+    if (pi.version.isNotEmpty) {
+      items.add(TTextMenu(
+        child: const Text('Beeld vernieuwen'),
+        onPressed: () => sessionRefreshVideo(sessionId, pi),
+      ));
+    }
+    final screenshotSupported = bind.sessionGetCommonSync(
+      sessionId: sessionId,
+      key: 'is_screenshot_supported',
+      param: '',
+    );
+    if (isDefaultConn && isDesktop && screenshotSupported == 'true') {
+      items.add(TTextMenu(
+        child: const Text('Schermafbeelding maken'),
+        onPressed: ffi.ffiModel.timerScreenshot != null
+            ? null
+            : () {
+                if (pi.currentDisplay == kAllDisplayValue) {
+                  msgBox(
+                    sessionId,
+                    'custom-nook-nocancel-hasclose-info',
+                    'Take screenshot',
+                    'screenshot-merged-screen-not-supported-tip',
+                    '',
+                    ffi.dialogManager,
+                  );
+                } else {
+                  bind.sessionTakeScreenshot(
+                    sessionId: sessionId,
+                    display: pi.currentDisplay,
+                  );
+                  ffi.ffiModel.timerScreenshot = Timer(
+                    const Duration(seconds: 30),
+                    () => ffi.ffiModel.timerScreenshot = null,
+                  );
+                }
+              },
+      ));
+    }
+    return items;
+  }
+
   List<TTextMenu> v = [];
   // elevation
   if (isDefaultConn &&

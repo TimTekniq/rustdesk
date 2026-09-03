@@ -327,10 +327,14 @@ class ToolbarState {
 }
 
 class _ToolbarTheme {
-  static const Color blueColor = MyTheme.button;
-  static const Color hoverBlueColor = MyTheme.accent;
-  static Color inactiveColor = Colors.grey[800]!;
-  static Color hoverInactiveColor = Colors.grey[850]!;
+  static Color get blueColor =>
+      isTekniqClient ? const Color(0xFFF8BF00) : MyTheme.button;
+  static Color get hoverBlueColor =>
+      isTekniqClient ? const Color(0xFFFFD84D) : MyTheme.accent;
+  static Color get inactiveColor =>
+      isTekniqClient ? const Color(0xFF172033) : Colors.grey[800]!;
+  static Color get hoverInactiveColor =>
+      isTekniqClient ? const Color(0xFF26395F) : Colors.grey[850]!;
 
   static const Color redColor = Colors.redAccent;
   static const Color hoverRedColor = Colors.red;
@@ -353,12 +357,20 @@ class _ToolbarTheme {
   static const double menuButtonBorderRadius = 3.0;
 
   static Color borderColor(BuildContext context) =>
-      MyTheme.color(context).border3 ?? MyTheme.border;
+      isTekniqClient
+          ? const Color(0xFF334155)
+          : MyTheme.color(context).border3 ?? MyTheme.border;
 
   static Color? dividerColor(BuildContext context) =>
       MyTheme.color(context).divider;
 
   static MenuStyle defaultMenuStyle(BuildContext context) => MenuStyle(
+        backgroundColor: isTekniqClient
+            ? const MaterialStatePropertyAll(Color(0xFF111827))
+            : null,
+        surfaceTintColor: isTekniqClient
+            ? const MaterialStatePropertyAll(Colors.transparent)
+            : null,
         side: MaterialStateProperty.all(BorderSide(
           width: 1,
           color: borderColor(context),
@@ -805,6 +817,16 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
   Widget _buildToolbar(
       BuildContext context, _ToolbarEdge edge, bool isHorizontal) {
     final List<Widget> toolbarItems = [];
+    if (isTekniqCustomer) {
+      toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
+      return _buildToolbarSurface(
+        context,
+        toolbarItems,
+        edge,
+        isHorizontal,
+      );
+    }
+
     toolbarItems.add(_PinMenu(state: widget.state));
     toolbarItems.add(Obx(() {
       final privacyModeState = PrivacyModeState.find(widget.id);
@@ -817,7 +839,7 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
         return const Offstage();
       }
     }));
-    if (!isWebDesktop) {
+    if (!isWebDesktop && !isTekniqOperator) {
       toolbarItems.add(_MobileActionMenu(ffi: widget.ffi));
     }
 
@@ -838,6 +860,12 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
 
     toolbarItems
         .add(_ControlMenu(id: widget.id, ffi: widget.ffi, state: widget.state));
+    if (isTekniqOperator) {
+      toolbarItems.add(_TekniqShareScreenButton(
+        id: widget.id,
+        ffi: widget.ffi,
+      ));
+    }
     toolbarItems.add(_DisplayMenu(
       id: widget.id,
       ffi: widget.ffi,
@@ -845,15 +873,26 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       setFullscreen: _setFullscreen,
     ));
     // Do not show keyboard for camera connection type.
-    if (widget.ffi.connType == ConnType.defaultConn) {
+    if (widget.ffi.connType == ConnType.defaultConn && !isTekniqOperator) {
       toolbarItems.add(_KeyboardMenu(id: widget.id, ffi: widget.ffi));
     }
-    toolbarItems.add(_ChatMenu(id: widget.id, ffi: widget.ffi));
+    if (!isTekniqOperator) {
+      toolbarItems.add(_ChatMenu(id: widget.id, ffi: widget.ffi));
+    }
     if (!isWeb) {
       toolbarItems.add(_VoiceCallMenu(id: widget.id, ffi: widget.ffi));
     }
-    if (!isWeb) toolbarItems.add(_RecordMenu());
+    if (!isWeb && !isTekniqOperator) toolbarItems.add(_RecordMenu());
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
+    return _buildToolbarSurface(context, toolbarItems, edge, isHorizontal);
+  }
+
+  Widget _buildToolbarSurface(
+    BuildContext context,
+    List<Widget> toolbarItems,
+    _ToolbarEdge edge,
+    bool isHorizontal,
+  ) {
     final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
     // innerAxis: how the toolbar icons themselves flow.
     // outerAxis: how the toolbar block and the handle stack against each other
@@ -867,11 +906,13 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       elevation: _ToolbarTheme.elevation,
       shadowColor: MyTheme.color(context).shadow,
       borderRadius: toolbarBorderRadius,
-      color: Theme.of(context)
-          .menuBarTheme
-          .style
-          ?.backgroundColor
-          ?.resolve(MaterialState.values.toSet()),
+      color: isTekniqClient
+          ? const Color(0xFF0B1120)
+          : Theme.of(context)
+              .menuBarTheme
+              .style
+              ?.backgroundColor
+              ?.resolve(MaterialState.values.toSet()),
       child: SingleChildScrollView(
         scrollDirection: innerAxis,
         child: Theme(
@@ -910,6 +951,12 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       menuButtonTheme: MenuButtonThemeData(
         style: ButtonStyle(
           minimumSize: MaterialStatePropertyAll(Size(64, 32)),
+          foregroundColor: isTekniqClient
+              ? const MaterialStatePropertyAll(Color(0xFFEEF3FB))
+              : null,
+          overlayColor: isTekniqClient
+              ? const MaterialStatePropertyAll(Color(0xFF26395F))
+              : null,
           textStyle: MaterialStatePropertyAll(
             TextStyle(fontWeight: FontWeight.normal),
           ),
@@ -1328,6 +1375,54 @@ class _ControlMenu extends StatelessWidget {
                     trailingIcon: e.trailingIcon);
               }
             }).toList());
+  }
+}
+
+class _TekniqShareScreenButton extends StatelessWidget {
+  final String id;
+  final FFI ffi;
+
+  const _TekniqShareScreenButton({
+    Key? key,
+    required this.id,
+    required this.ffi,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final pi = ffi.ffiModel.pi;
+    final canSwitch = ffi.connType == ConnType.defaultConn &&
+        isDesktop &&
+        ffi.ffiModel.keyboard &&
+        pi.platform != kPeerPlatformAndroid &&
+        versionCmp(pi.version, '1.2.0') >= 0 &&
+        bind.peerGetSessionsCount(id: id, connType: ffi.connType.index) == 1;
+    if (!canSwitch) {
+      return const Offstage();
+    }
+    return _IconMenuButton(
+      tooltip: 'Mijn scherm tonen',
+      width: 154,
+      icon: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.screen_share_rounded, color: Color(0xFF17120A), size: 18),
+          SizedBox(width: 8),
+          Text(
+            'Mijn scherm tonen',
+            style: TextStyle(
+              color: Color(0xFF17120A),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+      color: _ToolbarTheme.blueColor,
+      hoverColor: _ToolbarTheme.hoverBlueColor,
+      onPressed: () =>
+          showConfirmSwitchSidesDialog(ffi.sessionId, id, ffi.dialogManager),
+    );
   }
 }
 
@@ -2820,7 +2915,10 @@ class _IconMenuButtonState extends State<_IconMenuButton> {
     final icon = widget.icon ??
         SvgPicture.asset(
           widget.assetName!,
-          colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(
+            isTekniqClient ? const Color(0xFF17120A) : Colors.white,
+            BlendMode.srcIn,
+          ),
           width: _ToolbarTheme.buttonSize,
           height: _ToolbarTheme.buttonSize,
         );
@@ -2905,7 +3003,10 @@ class _IconSubmenuButtonState extends State<_IconSubmenuButton> {
     final icon = widget.icon ??
         SvgPicture.asset(
           widget.svg!,
-          colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(
+            isTekniqClient ? const Color(0xFF17120A) : Colors.white,
+            BlendMode.srcIn,
+          ),
           width: _ToolbarTheme.buttonSize,
           height: _ToolbarTheme.buttonSize,
         );
