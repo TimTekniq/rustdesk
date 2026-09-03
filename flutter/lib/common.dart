@@ -3001,11 +3001,13 @@ Widget dialogButton(String text,
     if (isOutline) {
       return icon == null
           ? OutlinedButton(
+              style: buttonStyle,
               onPressed: onPressed,
               child: Text(translate(text), style: style),
             )
           : OutlinedButton.icon(
               icon: icon,
+              style: buttonStyle,
               onPressed: onPressed,
               label: Text(translate(text), style: style),
             );

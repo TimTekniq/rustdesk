@@ -594,8 +594,10 @@ class _DesktopTabState extends State<DesktopTab>
 
   Widget _buildBar() {
     final isIncomingHomePage = bind.isIncomingOnly() && isInHomePage();
-    return Row(
-      children: [
+    return ColoredBox(
+      color: isTekniqClient ? const Color(0xFF0B1120) : Colors.transparent,
+      child: Row(
+        children: [
         Expanded(
             child: GestureDetector(
                 // custom double tap handler
@@ -636,14 +638,27 @@ class _DesktopTabState extends State<DesktopTab>
                       child: Row(children: [
                         Offstage(
                           offstage: !showLogo,
-                          child: loadIcon(16),
+                          child: isTekniqClient
+                              ? Image.asset(
+                                  'assets/tekniq-favicon.png',
+                                  width: 20,
+                                  height: 20,
+                                  filterQuality: FilterQuality.high,
+                                )
+                              : loadIcon(16),
                         ),
                         Offstage(
                             offstage: !showTitle,
-                            child: const Text(
-                              "RustDesk",
-                              style: TextStyle(fontSize: 13),
-                            ).marginOnly(left: 2))
+                            child: Text(
+                              isTekniqClient ? appName : "RustDesk",
+                              style: TextStyle(
+                                color: isTekniqClient
+                                    ? const Color(0xFFEEF3FB)
+                                    : null,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ).marginOnly(left: isTekniqClient ? 6 : 2))
                       ]).marginOnly(
                         left: 5,
                         right: 10,
@@ -694,7 +709,8 @@ class _DesktopTabState extends State<DesktopTab>
           onClose: onWindowCloseButton,
           labelGetter: labelGetter,
         ).paddingOnly(left: 10)
-      ],
+        ],
+      ),
     );
   }
 }

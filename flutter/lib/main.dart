@@ -318,17 +318,26 @@ Alignment get _connectionManagerWindowAlignment =>
 showCmWindow({bool isStartup = false}) async {
   if (isStartup) {
     WindowOptions windowOptions = getHiddenTitleBarWindowOptions(
-        size: _connectionManagerWindowSize, alwaysOnTop: true);
+        size: _connectionManagerWindowSize,
+        alwaysOnTop: true,
+        skipTaskbar: isTekniqCustomer);
     await windowManager.waitUntilReadyToShow(windowOptions, null);
     bind.mainHideDock();
+    if (isTekniqCustomer) {
+      await restoreWindowPosition(WindowType.Main);
+      await windowManager.setSize(_connectionManagerWindowSize);
+      await windowManager.setTitle('Tekniq Hulp');
+    }
     await Future.wait([
       windowManager.show(),
       windowManager.focus(),
       windowManager.setOpacity(1)
     ]);
     // ensure initial window size to be changed
-    await windowManager.setSizeAlignment(
-        _connectionManagerWindowSize, _connectionManagerWindowAlignment);
+    if (!isTekniqCustomer) {
+      await windowManager.setSizeAlignment(
+          _connectionManagerWindowSize, _connectionManagerWindowAlignment);
+    }
     _isCmReadyToShow = true;
   } else if (_isCmReadyToShow) {
     if (await windowManager.getOpacity() != 1) {
@@ -415,7 +424,8 @@ WindowOptions getHiddenTitleBarWindowOptions(
     {bool isMainWindow = false,
     Size? size,
     bool center = false,
-    bool? alwaysOnTop}) {
+    bool? alwaysOnTop,
+    bool skipTaskbar = false}) {
   var defaultTitleBarStyle = TitleBarStyle.hidden;
   // we do not hide titlebar on win7 because of the frame overflow.
   if (kUseCompatibleUiMode) {
@@ -425,7 +435,7 @@ WindowOptions getHiddenTitleBarWindowOptions(
     size: size,
     center: center,
     backgroundColor: (isMacOS && isMainWindow) ? null : Colors.transparent,
-    skipTaskbar: false,
+    skipTaskbar: skipTaskbar,
     titleBarStyle: defaultTitleBarStyle,
     alwaysOnTop: alwaysOnTop,
   );

@@ -1814,8 +1814,69 @@ void showConfirmSwitchSidesDialog(
     SessionID sessionId, String id, OverlayDialogManager dialogManager) async {
   dialogManager.show((setState, close, context) {
     submit() async {
+      close();
       await bind.sessionSwitchSides(sessionId: sessionId);
-      closeConnection(id: id);
+      if (!isTekniqOperator) {
+        closeConnection(id: id);
+      }
+    }
+
+    if (isTekniqOperator) {
+      const yellow = Color(0xFFF8BF00);
+      const text = Color(0xFFEEF3FB);
+      const muted = Color(0xFF9AA8BA);
+      const buttonText = Color(0xFF17120A);
+
+      return CustomAlertDialog(
+        contentBoxConstraints: const BoxConstraints(maxWidth: 420),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.screen_share_rounded, color: yellow, size: 54),
+            SizedBox(height: 18),
+            Text(
+              'Mijn scherm tonen?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: text,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'De klant kan alleen meekijken en krijgt geen bediening van uw muis of toetsenbord.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: muted, fontSize: 14, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          dialogButton(
+            'Annuleren',
+            onPressed: close,
+            isOutline: true,
+            style: const TextStyle(color: muted),
+            buttonStyle: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF334155)),
+            ),
+          ),
+          dialogButton(
+            'Scherm tonen',
+            onPressed: submit,
+            style: const TextStyle(
+              color: buttonText,
+              fontWeight: FontWeight.w700,
+            ),
+            buttonStyle: ElevatedButton.styleFrom(
+              backgroundColor: yellow,
+              foregroundColor: buttonText,
+            ),
+          ),
+        ],
+        onSubmit: submit,
+        onCancel: close,
+      );
     }
 
     return CustomAlertDialog(

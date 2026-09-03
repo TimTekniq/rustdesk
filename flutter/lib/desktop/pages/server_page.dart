@@ -453,6 +453,16 @@ class ConnectionManagerState extends State<ConnectionManager>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const _AppIcon(),
+          if (isTekniqClient)
+            Text(
+              appName,
+              style: const TextStyle(
+                color: _tekniqText,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          if (isTekniqClient) const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
               onPanStart: (d) {
@@ -545,10 +555,11 @@ class _AppIcon extends StatelessWidget {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 4.0),
       child: isTekniqClient
-          ? SvgPicture.asset(
-              'assets/tekniq-mark.svg',
-              width: 26,
-              height: 26,
+          ? Image.asset(
+              'assets/tekniq-favicon.png',
+              width: 20,
+              height: 20,
+              filterQuality: FilterQuality.high,
             )
           : loadIcon(30),
     );
