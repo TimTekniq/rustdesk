@@ -356,7 +356,7 @@ class ConnectionManagerState extends State<ConnectionManager>
                       if (!waiting && !disconnected && !authorized)
                         FilledButton(
                           onPressed: () {
-                            serverModel.sendLoginResponse(client!, true);
+                            serverModel.sendLoginResponse(client, true);
                           },
                           style: FilledButton.styleFrom(
                             backgroundColor: _tekniqYellow,
