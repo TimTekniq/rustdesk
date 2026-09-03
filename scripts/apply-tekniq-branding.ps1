@@ -7,6 +7,18 @@ $ErrorActionPreference = 'Stop'
 
 $appName = if ($Variant -eq 'beheer') { 'Tekniq Beheer' } else { 'Tekniq Hulp' }
 $organization = if ($Variant -eq 'beheer') { 'nl.tekniq.beheer' } else { 'nl.tekniq.hulp' }
+$fileStem = if ($Variant -eq 'beheer') { 'TekniqBeheer' } else { 'TekniqHulp' }
+
+function Set-TekniqProductMetadata {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $content = Get-Content -Raw -LiteralPath $Path
+    $content = $content.Replace('Tekniq Hulp op afstand', "$appName op afstand")
+    $content = $content.Replace('Tekniq Hulp', $appName)
+    $content = $content.Replace('TekniqHulp.exe', "$fileStem.exe")
+    $content = $content.Replace('TekniqHulp', $fileStem)
+    Set-Content -LiteralPath $Path -Value $content -Encoding utf8NoBOM -NoNewline
+}
 
 $configPath = Join-Path $PSScriptRoot '..\libs\hbb_common\src\config.rs'
 $config = Get-Content -Raw -LiteralPath $configPath
@@ -27,5 +39,9 @@ foreach ($entry in $replacements.GetEnumerator()) {
 }
 
 Set-Content -LiteralPath $configPath -Value $config -Encoding utf8NoBOM -NoNewline
+
+Set-TekniqProductMetadata -Path (Join-Path $PSScriptRoot '..\Cargo.toml')
+Set-TekniqProductMetadata -Path (Join-Path $PSScriptRoot '..\libs\portable\Cargo.toml')
+Set-TekniqProductMetadata -Path (Join-Path $PSScriptRoot '..\flutter\windows\runner\Runner.rc')
 
 Write-Host "$appName branding and self-hosted server settings applied."
