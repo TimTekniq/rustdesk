@@ -324,9 +324,6 @@ showCmWindow({bool isStartup = false}) async {
     await windowManager.waitUntilReadyToShow(windowOptions, null);
     bind.mainHideDock();
     if (isTekniqCustomer) {
-      // The customer should experience one support window. The connection
-      // manager temporarily replaces the code window while help is active.
-      await WindowController.fromWindowId(kWindowMainId).hide();
       await restoreWindowPosition(WindowType.Main);
       await windowManager.setSize(_connectionManagerWindowSize);
       await windowManager.setTitle(getWindowName());

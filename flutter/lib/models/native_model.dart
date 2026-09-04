@@ -60,7 +60,8 @@ class PlatformFFI {
   }
 
   bool registerEventHandler(
-      String eventName, String handlerName, HandleEvent handler, {bool replace = false}) {
+      String eventName, String handlerName, HandleEvent handler,
+      {bool replace = false}) {
     debugPrint('registerEventHandler $eventName $handlerName');
     var handlers = _eventHandlers[eventName];
     if (handlers == null) {
@@ -216,6 +217,13 @@ class PlatformFFI {
         appDir: _dir,
         customClientConfig: '',
       );
+      if (desktopType == DesktopType.main && isTekniqCustomer) {
+        await _ffiBind.cmInit();
+        final ready = await _ffiBind.cmWaitForListener();
+        if (!ready) {
+          throw StateError('Tekniq connection manager failed to start');
+        }
+      }
     } catch (e) {
       debugPrintStack(label: 'initialize failed: $e');
     }

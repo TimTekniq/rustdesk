@@ -91,6 +91,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         builder: (context, model, child) {
           final id = model.serverId.text.trim();
           final ready = id.isNotEmpty;
+          final client = model.clients.isEmpty ? null : model.clients.first;
+          final awaitingApproval =
+              client != null && !client.authorized && !client.disconnected;
+          final active =
+              client != null && client.authorized && !client.disconnected;
 
           return Container(
             color: background,
@@ -130,14 +135,23 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 30),
-                      const Text(
-                        'Geef alleen deze code door aan uw Tekniq-medewerker.',
+                      const SizedBox(height: 26),
+                      Text(
+                        awaitingApproval
+                            ? 'Een Tekniq-medewerker wil helpen'
+                            : active
+                                ? client!.fromSwitch
+                                    ? 'Tekniq toont nu een scherm'
+                                    : 'Tekniq helpt nu mee'
+                                : 'Geef alleen deze code door aan uw Tekniq-medewerker.',
                         style: TextStyle(
                           color: ink,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
+                          fontSize: awaitingApproval || active ? 22 : 17,
+                          fontWeight: FontWeight.w700,
                         ),
+                        textAlign: awaitingApproval || active
+                            ? TextAlign.center
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       Container(
@@ -151,80 +165,124 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: awaitingApproval || active
+                              ? CrossAxisAlignment.stretch
+                              : CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'UW CODE',
-                              style: TextStyle(
-                                color: muted,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
+                            if (awaitingApproval || active) ...[
+                              Icon(
+                                active
+                                    ? Icons.verified_user_rounded
+                                    : Icons.support_agent_rounded,
+                                color: brand,
+                                size: 42,
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            SelectableText(
-                              id.isEmpty ? 'Even geduld…' : id,
-                              style: const TextStyle(
-                                color: ink,
-                                fontSize: 34,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 1.5,
+                              const SizedBox(height: 12),
+                              Text(
+                                awaitingApproval
+                                    ? 'Sta deze verbinding eenmalig toe. U houdt altijd zelf de controle.'
+                                    : 'De verbinding is actief. U kunt de hulp hieronder direct stoppen.',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: muted,
+                                  fontSize: 14,
+                                  height: 1.45,
+                                ),
                               ),
-                            ),
+                            ] else ...[
+                              const Text(
+                                'UW CODE',
+                                style: TextStyle(
+                                  color: muted,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              SelectableText(
+                                id.isEmpty ? 'Even geduld…' : id,
+                                style: const TextStyle(
+                                  color: ink,
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Container(
-                            width: 9,
-                            height: 9,
-                            decoration: BoxDecoration(
-                              color: ready ? const Color(0xFF12B76A) : brand,
-                              shape: BoxShape.circle,
+                      if (!awaitingApproval && !active) ...[
+                        Row(
+                          children: [
+                            Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: ready ? const Color(0xFF12B76A) : brand,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            ready ? 'Klaar voor verbinding' : 'Verbinding voorbereiden…',
-                            style: const TextStyle(color: muted, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              ready
+                                  ? 'Klaar voor verbinding'
+                                  : 'Verbinding voorbereiden…',
+                              style:
+                                  const TextStyle(color: muted, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 22),
+                      ],
                       FilledButton(
-                        onPressed: () {
-                          SystemNavigator.pop();
-                          if (isWindows) {
-                            exit(0);
-                          }
-                        },
+                        onPressed: awaitingApproval
+                            ? () => model.sendLoginResponse(client!, true)
+                            : active
+                                ? () =>
+                                    bind.cmCloseConnection(connId: client!.id)
+                                : () {
+                                    SystemNavigator.pop();
+                                    if (isWindows) {
+                                      exit(0);
+                                    }
+                                  },
                         style: FilledButton.styleFrom(
-                          backgroundColor: brand,
-                          foregroundColor: const Color(0xFF17120A),
-                          minimumSize: const Size.fromHeight(50),
+                          backgroundColor:
+                              active ? const Color(0xFF9F2424) : brand,
+                          foregroundColor:
+                              active ? ink : const Color(0xFF17120A),
+                          minimumSize: const Size.fromHeight(54),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'Hulp beëindigen',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        child: Text(
+                          awaitingApproval
+                              ? 'Hulp toestaan'
+                              : 'Hulp beëindigen',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
-                        'Sluit documenten die niet nodig zijn. U kunt de hulp altijd stoppen met de knop hierboven.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted, fontSize: 12, height: 1.4),
-                      ),
+                      if (!awaitingApproval)
+                        const Text(
+                          'Sluit documenten die niet nodig zijn. U kunt de hulp altijd stoppen met de knop hierboven.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: muted, fontSize: 12, height: 1.4),
+                        ),
                       const SizedBox(height: 20),
                       const Text(
                         'Gebaseerd op RustDesk · Broncode en privacy: help.tekniq.nl/hulp-op-afstand',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF6F7E93), fontSize: 10),
+                        style:
+                            TextStyle(color: Color(0xFF6F7E93), fontSize: 10),
                       ),
                     ],
                   ),
@@ -934,7 +992,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
     bool isChattyMethod(String methodName) {
       switch (methodName) {
-        case kWindowBumpMouse: return true;
+        case kWindowBumpMouse:
+          return true;
       }
 
       return false;
@@ -943,7 +1002,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     rustDeskWinManager.setMethodHandler((call, fromWindowId) async {
       if (!isChattyMethod(call.method)) {
         debugPrint(
-          "[Main] call ${call.method} with args ${call.arguments} from window $fromWindowId");
+            "[Main] call ${call.method} with args ${call.arguments} from window $fromWindowId");
       }
       if (call.method == kWindowMainWindowOnTop) {
         windowOnTop(null);
@@ -978,9 +1037,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           connToken: call.arguments['connToken'],
         );
       } else if (call.method == kWindowBumpMouse) {
-        return RdPlatformChannel.instance.bumpMouse(
-          dx: call.arguments['dx'],
-          dy: call.arguments['dy']);
+        return RdPlatformChannel.instance
+            .bumpMouse(dx: call.arguments['dx'], dy: call.arguments['dy']);
       } else if (call.method == kWindowEventMoveTabToNewWindow) {
         final args = call.arguments.split(',');
         int? windowId;

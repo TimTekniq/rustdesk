@@ -438,10 +438,10 @@ class _ConnectionPageState extends State<ConnectionPage>
           final form = _buildTekniqConnectionForm();
           final saved = _buildTekniqSavedCustomers();
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(36),
+            padding: const EdgeInsets.all(18),
             child: ConstrainedBox(
               constraints:
-                  BoxConstraints(minHeight: constraints.maxHeight - 72),
+                  BoxConstraints(minHeight: constraints.maxHeight - 36),
               child: compact
                   ? Column(
                       children: [form, const SizedBox(height: 28), saved],
@@ -450,7 +450,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(width: 260, child: saved),
-                        const SizedBox(width: 42),
+                        const SizedBox(width: 24),
                         Expanded(child: Center(child: form)),
                       ],
                     ),

@@ -156,12 +156,14 @@ class ServerModel with ChangeNotifier {
         notifyListeners();
       }
 
-      if (desktopType == DesktopType.cm) {
+      final monitorsConnectionManager = desktopType == DesktopType.cm ||
+          (desktopType == DesktopType.main && isTekniqCustomer);
+      if (monitorsConnectionManager) {
         final res = await bind.cmCheckClientsLength(length: _clients.length);
         if (res != null) {
           debugPrint("clients not match!");
           updateClientState(res);
-        } else {
+        } else if (desktopType == DesktopType.cm) {
           if (_clients.isEmpty) {
             hideCmWindow();
             if (_zeroClientLengthCounter++ == 12) {
@@ -718,7 +720,12 @@ class ServerModel with ChangeNotifier {
       if (_clients.any((c) => c.id == id)) {
         final index = _clients.indexWhere((client) => client.id == id);
         if (index >= 0) {
-          if (close) {
+          final removeImmediately =
+              close || (desktopType == DesktopType.main && isTekniqCustomer);
+          if (removeImmediately) {
+            if (!close) {
+              unawaited(bind.cmRemoveDisconnectedConnection(connId: id));
+            }
             _clients.removeAt(index);
             tabController.remove(index);
           } else {

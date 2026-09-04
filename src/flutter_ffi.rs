@@ -2439,6 +2439,21 @@ pub fn cm_init() {
     crate::flutter::connection_manager::cm_init();
 }
 
+/// Wait until the in-process connection manager has claimed its IPC socket.
+/// This prevents the server from racing it and launching a second CM process.
+pub async fn cm_wait_for_listener() -> bool {
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        for _ in 0..40 {
+            if crate::ipc::connect(50, "_cm").await.is_ok() {
+                return true;
+            }
+            hbb_common::tokio::time::sleep(Duration::from_millis(25)).await;
+        }
+    }
+    false
+}
+
 /// Start an ipc server for receiving the url scheme.
 ///
 /// * Should only be called in the main flutter window.

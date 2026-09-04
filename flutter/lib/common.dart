@@ -3042,7 +3042,7 @@ int versionCmp(String v1, String v2) {
 
 String getWindowName({WindowType? overrideType}) {
   final name = bind.mainGetAppNameSync();
-  final displayName = isTekniqClient ? '$name · test 7' : name;
+  final displayName = isTekniqClient ? '$name · test 8' : name;
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
       return displayName;

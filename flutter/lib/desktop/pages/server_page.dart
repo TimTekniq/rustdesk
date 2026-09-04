@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter_hbb/common/widgets/audio_input.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/tabbar_widget.dart';
@@ -68,10 +67,6 @@ class _DesktopServerPageState extends State<DesktopServerPage>
 
   @override
   void onWindowClose() {
-    if (isTekniqCustomer) {
-      WindowController.fromWindowId(kWindowMainId).show();
-      WindowController.fromWindowId(kWindowMainId).focus();
-    }
     Future.wait([gFFI.serverModel.closeAll(), gFFI.close()]).then((_) {
       if (isMacOS) {
         RdPlatformChannel.instance.terminate();
@@ -85,10 +80,6 @@ class _DesktopServerPageState extends State<DesktopServerPage>
 
   void onRemoveId(String id) {
     if (tabController.state.value.tabs.isEmpty) {
-      if (isTekniqCustomer) {
-        WindowController.fromWindowId(kWindowMainId).show();
-        WindowController.fromWindowId(kWindowMainId).focus();
-      }
       windowManager.close();
     }
   }
@@ -139,7 +130,6 @@ class ConnectionManagerState extends State<ConnectionManager>
     with WidgetsBindingObserver {
   final RxBool _controlPageBlock = false.obs;
   final RxBool _sidePageBlock = false.obs;
-  bool _returningToCustomerMain = false;
 
   ConnectionManagerState() {
     gFFI.serverModel.tabController.onSelected = (client_id_str) {
@@ -302,18 +292,6 @@ class ConnectionManagerState extends State<ConnectionManager>
     final disconnected = client?.disconnected == true;
     final authorized = client?.authorized == true && !disconnected;
     final isScreenShare = client?.fromSwitch == true;
-
-    if (disconnected && !_returningToCustomerMain) {
-      _returningToCustomerMain = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (client != null) {
-          await bind.cmRemoveDisconnectedConnection(connId: client.id);
-        }
-        await WindowController.fromWindowId(kWindowMainId).show();
-        await WindowController.fromWindowId(kWindowMainId).focus();
-        await windowManager.close();
-      });
-    }
 
     final title = waiting
         ? 'Tekniq Hulp'
