@@ -331,6 +331,10 @@ class ConnectionManagerState extends State<ConnectionManager>
                         'assets/tekniq-mark.svg',
                         width: 72,
                         height: 72,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -559,6 +563,8 @@ class _AppIcon extends StatelessWidget {
               'assets/tekniq-favicon.png',
               width: 20,
               height: 20,
+              color: Colors.white,
+              colorBlendMode: BlendMode.srcIn,
               filterQuality: FilterQuality.high,
             )
           : loadIcon(30),

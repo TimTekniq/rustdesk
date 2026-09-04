@@ -109,6 +109,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                             'assets/tekniq-mark.svg',
                             width: 54,
                             height: 54,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
                           ),
                           const SizedBox(width: 14),
                           const Column(

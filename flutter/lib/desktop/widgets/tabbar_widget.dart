@@ -643,6 +643,8 @@ class _DesktopTabState extends State<DesktopTab>
                                   'assets/tekniq-favicon.png',
                                   width: 20,
                                   height: 20,
+                                  color: Colors.white,
+                                  colorBlendMode: BlendMode.srcIn,
                                   filterQuality: FilterQuality.high,
                                 )
                               : loadIcon(16),
