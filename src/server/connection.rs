@@ -85,6 +85,10 @@ lazy_static::lazy_static! {
 
 #[cfg(feature = "flutter")]
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
+const SWITCH_SIDES_TOKEN_TTL: Duration = Duration::from_secs(60);
+
+#[cfg(feature = "flutter")]
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 lazy_static::lazy_static! {
     static ref SWITCH_SIDES_UUID: Arc::<Mutex<HashMap<String, (Instant, uuid::Uuid)>>> = Default::default();
     static ref PENDING_SWITCH_SIDES_UUID: Arc::<Mutex<HashMap<String, (Instant, uuid::Uuid)>>> = Default::default();
@@ -2811,7 +2815,7 @@ impl Connection {
                 SWITCH_SIDES_UUID
                     .lock()
                     .unwrap()
-                    .retain(|_, v| v.0.elapsed() < Duration::from_secs(10));
+                    .retain(|_, v| v.0.elapsed() < SWITCH_SIDES_TOKEN_TTL);
                 let uuid_old = SWITCH_SIDES_UUID.lock().unwrap().remove(&lr.my_id);
                 if let Ok(uuid) = uuid::Uuid::from_slice(_s.uuid.to_vec().as_ref()) {
                     if let Some((_instant, uuid_old)) = uuid_old {
@@ -5797,7 +5801,7 @@ pub fn insert_switch_sides_uuid(id: String, uuid: uuid::Uuid) {
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub fn insert_pending_switch_sides_uuid(id: String, uuid: uuid::Uuid) {
     let mut uuids = PENDING_SWITCH_SIDES_UUID.lock().unwrap();
-    uuids.retain(|_, (instant, _)| instant.elapsed() < Duration::from_secs(10));
+    uuids.retain(|_, (instant, _)| instant.elapsed() < SWITCH_SIDES_TOKEN_TTL);
     uuids.insert(id, (tokio::time::Instant::now(), uuid));
 }
 
@@ -5805,7 +5809,7 @@ pub fn insert_pending_switch_sides_uuid(id: String, uuid: uuid::Uuid) {
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub fn remove_pending_switch_sides_uuid(id: &str, uuid: &uuid::Uuid) -> bool {
     let mut uuids = PENDING_SWITCH_SIDES_UUID.lock().unwrap();
-    uuids.retain(|_, (instant, _)| instant.elapsed() < Duration::from_secs(10));
+    uuids.retain(|_, (instant, _)| instant.elapsed() < SWITCH_SIDES_TOKEN_TTL);
     if uuids.get(id).map(|(_, stored_uuid)| stored_uuid == uuid) == Some(true) {
         uuids.remove(id);
         true

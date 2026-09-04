@@ -354,10 +354,6 @@ class _ConnectionPageState extends State<ConnectionPage>
                       'assets/tekniq-mark.svg',
                       width: 64,
                       height: 64,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.white,
-                        BlendMode.srcIn,
-                      ),
                     ),
                     const SizedBox(width: 18),
                     const Column(

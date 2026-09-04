@@ -331,10 +331,6 @@ class ConnectionManagerState extends State<ConnectionManager>
                         'assets/tekniq-mark.svg',
                         width: 72,
                         height: 72,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -482,6 +478,7 @@ class ConnectionManagerState extends State<ConnectionManager>
           const SizedBox(
             width: 4.0,
           ),
+          if (isTekniqCustomer) const _MinimizeButton(),
           const _CloseButton()
         ],
       ),
@@ -563,11 +560,28 @@ class _AppIcon extends StatelessWidget {
               'assets/tekniq-favicon.png',
               width: 20,
               height: 20,
-              color: Colors.white,
-              colorBlendMode: BlendMode.srcIn,
               filterQuality: FilterQuality.high,
             )
           : loadIcon(30),
+    );
+  }
+}
+
+class _MinimizeButton extends StatelessWidget {
+  const _MinimizeButton({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: translate('Minimize'),
+      onPressed: () => windowManager.minimize(),
+      icon: const Icon(
+        IconFont.min,
+        size: 18,
+        color: _tekniqText,
+      ),
+      splashColor: Colors.transparent,
+      hoverColor: Colors.transparent,
     );
   }
 }

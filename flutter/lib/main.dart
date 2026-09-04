@@ -319,8 +319,8 @@ showCmWindow({bool isStartup = false}) async {
   if (isStartup) {
     WindowOptions windowOptions = getHiddenTitleBarWindowOptions(
         size: _connectionManagerWindowSize,
-        alwaysOnTop: true,
-        skipTaskbar: isTekniqCustomer);
+        alwaysOnTop: !isTekniqCustomer,
+        skipTaskbar: false);
     await windowManager.waitUntilReadyToShow(windowOptions, null);
     bind.mainHideDock();
     if (isTekniqCustomer) {
