@@ -2441,16 +2441,26 @@ pub fn cm_init() {
 
 /// Wait until the in-process connection manager has claimed its IPC socket.
 /// This prevents the server from racing it and launching a second CM process.
-pub async fn cm_wait_for_listener() -> bool {
+pub fn cm_wait_for_listener() -> bool {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        for _ in 0..40 {
-            if crate::ipc::connect(50, "_cm").await.is_ok() {
-                return true;
+        let Ok(runtime) = hbb_common::tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        else {
+            return false;
+        };
+        return runtime.block_on(async {
+            for _ in 0..40 {
+                if crate::ipc::connect(50, "_cm").await.is_ok() {
+                    return true;
+                }
+                hbb_common::tokio::time::sleep(Duration::from_millis(25)).await;
             }
-            hbb_common::tokio::time::sleep(Duration::from_millis(25)).await;
-        }
+            false
+        });
     }
+    #[allow(unreachable_code)]
     false
 }
 
