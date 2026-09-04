@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/common/widgets/connection_page_title.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/popup_menu.dart';
@@ -350,10 +349,11 @@ class _ConnectionPageState extends State<ConnectionPage>
               children: [
                 Row(
                   children: [
-                    SvgPicture.asset(
-                      'assets/tekniq-mark.svg',
+                    Image.asset(
+                      'assets/tekniq-mark.png',
                       width: 64,
                       height: 64,
+                      filterQuality: FilterQuality.high,
                     ),
                     const SizedBox(width: 18),
                     const Column(

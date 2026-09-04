@@ -327,10 +327,11 @@ class ConnectionManagerState extends State<ConnectionManager>
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SvgPicture.asset(
-                        'assets/tekniq-mark.svg',
+                      Image.asset(
+                        'assets/tekniq-mark.png',
                         width: 72,
                         height: 72,
+                        filterQuality: FilterQuality.high,
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -557,7 +558,7 @@ class _AppIcon extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: 4.0),
       child: isTekniqClient
           ? Image.asset(
-              'assets/tekniq-favicon.png',
+              'assets/tekniq-mark.png',
               width: 20,
               height: 20,
               filterQuality: FilterQuality.high,

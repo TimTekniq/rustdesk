@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
@@ -105,10 +104,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     children: [
                       Row(
                         children: [
-                          SvgPicture.asset(
-                            'assets/tekniq-mark.svg',
+                          Image.asset(
+                            'assets/tekniq-mark.png',
                             width: 54,
                             height: 54,
+                            filterQuality: FilterQuality.high,
                           ),
                           const SizedBox(width: 14),
                           const Column(

@@ -640,7 +640,7 @@ class _DesktopTabState extends State<DesktopTab>
                           offstage: !showLogo,
                           child: isTekniqClient
                               ? Image.asset(
-                                  'assets/tekniq-favicon.png',
+                                  'assets/tekniq-mark.png',
                                   width: 20,
                                   height: 20,
                                   filterQuality: FilterQuality.high,
