@@ -2,6 +2,9 @@ name: Build Tekniq Hulp
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - tekniq-hulp-1.4.9
 
 env:
   FLUTTER_VERSION: '3.24.5'
