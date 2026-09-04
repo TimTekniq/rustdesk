@@ -3459,8 +3459,10 @@ async fn is_switch_sides_back(conn_type: ConnType, interface: &impl Interface) -
     )
     .await
     {
+        log::warn!("Tekniq switch: local handover token check failed for peer {id}");
         return false;
     }
+    log::info!("Tekniq switch: local handover token verified for peer {id}");
     let lch = interface.get_lch();
     let lc = lch.read().unwrap();
     let current_uuid = lc
@@ -3547,6 +3549,7 @@ pub async fn handle_hash(
                 {
                     log::warn!("Ignored untrusted switch_uuid");
                 } else {
+                    log::info!("Tekniq switch: handover token consumed for peer {id}");
                     lc.write().unwrap().allow_switch_back_once();
                     send_switch_login_request(lc.clone(), peer, uuid).await;
                     lc.write().unwrap().password_source = Default::default();

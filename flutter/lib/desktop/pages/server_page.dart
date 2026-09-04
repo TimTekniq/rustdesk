@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter_hbb/common/widgets/audio_input.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/tabbar_widget.dart';
@@ -67,6 +68,10 @@ class _DesktopServerPageState extends State<DesktopServerPage>
 
   @override
   void onWindowClose() {
+    if (isTekniqCustomer) {
+      WindowController.fromWindowId(kWindowMainId).show();
+      WindowController.fromWindowId(kWindowMainId).focus();
+    }
     Future.wait([gFFI.serverModel.closeAll(), gFFI.close()]).then((_) {
       if (isMacOS) {
         RdPlatformChannel.instance.terminate();
@@ -80,6 +85,10 @@ class _DesktopServerPageState extends State<DesktopServerPage>
 
   void onRemoveId(String id) {
     if (tabController.state.value.tabs.isEmpty) {
+      if (isTekniqCustomer) {
+        WindowController.fromWindowId(kWindowMainId).show();
+        WindowController.fromWindowId(kWindowMainId).focus();
+      }
       windowManager.close();
     }
   }
@@ -130,6 +139,7 @@ class ConnectionManagerState extends State<ConnectionManager>
     with WidgetsBindingObserver {
   final RxBool _controlPageBlock = false.obs;
   final RxBool _sidePageBlock = false.obs;
+  bool _returningToCustomerMain = false;
 
   ConnectionManagerState() {
     gFFI.serverModel.tabController.onSelected = (client_id_str) {
@@ -292,6 +302,18 @@ class ConnectionManagerState extends State<ConnectionManager>
     final disconnected = client?.disconnected == true;
     final authorized = client?.authorized == true && !disconnected;
     final isScreenShare = client?.fromSwitch == true;
+
+    if (disconnected && !_returningToCustomerMain) {
+      _returningToCustomerMain = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (client != null) {
+          await bind.cmRemoveDisconnectedConnection(connId: client.id);
+        }
+        await WindowController.fromWindowId(kWindowMainId).show();
+        await WindowController.fromWindowId(kWindowMainId).focus();
+        await windowManager.close();
+      });
+    }
 
     final title = waiting
         ? 'Tekniq Hulp'
@@ -695,9 +717,8 @@ class _CmHeaderState extends State<_CmHeader>
                   child: Text(
                     "(${client.peerId})",
                     style: TextStyle(
-                        color: bind.isCustomClient()
-                            ? _tekniqMuted
-                            : Colors.white,
+                        color:
+                            bind.isCustomClient() ? _tekniqMuted : Colors.white,
                         fontSize: 14),
                   ),
                 ),
@@ -1153,9 +1174,8 @@ class _CmControlPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: buildButton(context,
-                    color: bind.isCustomClient()
-                        ? _tekniqYellow
-                        : MyTheme.accent,
+                    color:
+                        bind.isCustomClient() ? _tekniqYellow : MyTheme.accent,
                     onClick: null, onTapDown: (details) async {
                   final devicesInfo =
                       await AudioInput.getDevicesInfo(true, true);
@@ -1245,9 +1265,8 @@ class _CmControlPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: buildButton(context,
-                    color: bind.isCustomClient()
-                        ? _tekniqYellow
-                        : MyTheme.accent,
+                    color:
+                        bind.isCustomClient() ? _tekniqYellow : MyTheme.accent,
                     onClick: () => handleVoiceCall(true),
                     icon: Icon(
                       Icons.call_rounded,
@@ -1291,8 +1310,7 @@ class _CmControlPanel extends StatelessWidget {
           offstage: !showElevation,
           child: buildButton(
             context,
-            color:
-                bind.isCustomClient() ? _tekniqYellow : MyTheme.accent,
+            color: bind.isCustomClient() ? _tekniqYellow : MyTheme.accent,
             onClick: () {
               handleElevate(context);
               windowManager.minimize();
@@ -1303,17 +1321,15 @@ class _CmControlPanel extends StatelessWidget {
               size: 14,
             ),
             text: 'Elevate',
-            textColor:
-                bind.isCustomClient() ? _tekniqButtonText : Colors.white,
+            textColor: bind.isCustomClient() ? _tekniqButtonText : Colors.white,
           ),
         ),
         Row(
           children: [
             Expanded(
               child: buildButton(context,
-                  color: bind.isCustomClient()
-                      ? _tekniqDanger
-                      : Colors.redAccent,
+                  color:
+                      bind.isCustomClient() ? _tekniqDanger : Colors.redAccent,
                   onClick: handleDisconnect,
                   text: 'Disconnect',
                   icon: Icon(
@@ -1323,9 +1339,8 @@ class _CmControlPanel extends StatelessWidget {
                         : Colors.white,
                     size: 14,
                   ),
-                  textColor: bind.isCustomClient()
-                      ? _tekniqDangerText
-                      : Colors.white),
+                  textColor:
+                      bind.isCustomClient() ? _tekniqDangerText : Colors.white),
             ),
           ],
         )
@@ -1339,13 +1354,11 @@ class _CmControlPanel extends StatelessWidget {
       children: [
         Expanded(
             child: buildButton(context,
-                color: bind.isCustomClient()
-                    ? _tekniqPanelRaised
-                    : MyTheme.accent,
+                color:
+                    bind.isCustomClient() ? _tekniqPanelRaised : MyTheme.accent,
                 onClick: handleClose,
                 text: 'Close',
-                textColor:
-                    bind.isCustomClient() ? _tekniqText : Colors.white)),
+                textColor: bind.isCustomClient() ? _tekniqText : Colors.white)),
       ],
     ).marginOnly(bottom: buttonBottomMargin);
   }
@@ -1363,9 +1376,8 @@ class _CmControlPanel extends StatelessWidget {
         Offstage(
           offstage: !showElevation || !showAccept,
           child: buildButton(context,
-              color: bind.isCustomClient()
-                  ? _tekniqYellow
-                  : Colors.green[700], onClick: () {
+              color: bind.isCustomClient() ? _tekniqYellow : Colors.green[700],
+              onClick: () {
             handleAccept(context);
             handleElevate(context);
             windowManager.minimize();
@@ -1373,8 +1385,7 @@ class _CmControlPanel extends StatelessWidget {
               text: 'Accept and Elevate',
               icon: Icon(
                 Icons.security_rounded,
-                color:
-                    bind.isCustomClient() ? _tekniqButtonText : Colors.white,
+                color: bind.isCustomClient() ? _tekniqButtonText : Colors.white,
                 size: 14,
               ),
               textColor:
@@ -1412,9 +1423,7 @@ class _CmControlPanel extends StatelessWidget {
                     ? _tekniqPanelRaised
                     : Colors.transparent,
                 border: Border.all(
-                    color: bind.isCustomClient()
-                        ? _tekniqLine
-                        : Colors.grey),
+                    color: bind.isCustomClient() ? _tekniqLine : Colors.grey),
                 onClick: handleDisconnect,
                 text: 'Cancel',
                 textColor: bind.isCustomClient() ? _tekniqText : null,

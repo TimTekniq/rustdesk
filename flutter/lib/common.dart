@@ -3042,9 +3042,10 @@ int versionCmp(String v1, String v2) {
 
 String getWindowName({WindowType? overrideType}) {
   final name = bind.mainGetAppNameSync();
+  final displayName = isTekniqClient ? '$name · test 7' : name;
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
-      return name;
+      return displayName;
     case WindowType.FileTransfer:
       return "File Transfer - $name";
     case WindowType.ViewCamera:
@@ -3056,7 +3057,7 @@ String getWindowName({WindowType? overrideType}) {
     default:
       break;
   }
-  return name;
+  return displayName;
 }
 
 String getWindowNameWithId(String id, {WindowType? overrideType}) {
@@ -4000,7 +4001,8 @@ bool get isTekniqOperator => isCustomClient && appName == 'Tekniq Beheer';
 bool get isTekniqClient => isTekniqCustomer || isTekniqOperator;
 
 get defaultOptionLang => isCustomClient ? 'default' : '';
-get defaultOptionTheme => isTekniqClient ? 'dark' : (isCustomClient ? 'system' : '');
+get defaultOptionTheme =>
+    isTekniqClient ? 'dark' : (isCustomClient ? 'system' : '');
 get defaultOptionYes => isCustomClient ? 'Y' : '';
 get defaultOptionNo => isCustomClient ? 'N' : '';
 get defaultOptionWhitelist => isCustomClient ? ',' : '';

@@ -2820,6 +2820,10 @@ impl Connection {
                 if let Ok(uuid) = uuid::Uuid::from_slice(_s.uuid.to_vec().as_ref()) {
                     if let Some((_instant, uuid_old)) = uuid_old {
                         if uuid == uuid_old {
+                            log::info!(
+                                "Tekniq switch: accepted return session from peer {}",
+                                lr.my_id
+                            );
                             self.from_switch = true;
                             self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::SwitchSides);
                             if !self.send_logon_response_and_keep_alive().await {
@@ -3545,6 +3549,10 @@ impl Connection {
                                 self.lr.my_id.clone(),
                                 uuid.clone(),
                             ) {
+                                log::info!(
+                                    "Tekniq switch: starting return viewer for peer {}",
+                                    self.lr.my_id
+                                );
                                 crate::run_me(vec![
                                     "--connect",
                                     &self.lr.my_id,

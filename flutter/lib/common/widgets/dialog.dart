@@ -1816,9 +1816,9 @@ void showConfirmSwitchSidesDialog(
     submit() async {
       close();
       await bind.sessionSwitchSides(sessionId: sessionId);
-      if (!isTekniqOperator) {
-        closeConnection(id: id);
-      }
+      // The switch token is sent before the old viewer is closed. Keeping that
+      // viewer open makes the expected handover look like a peer-reset crash.
+      closeConnection(id: id);
     }
 
     if (isTekniqOperator) {

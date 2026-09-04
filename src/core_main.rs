@@ -79,6 +79,13 @@ pub fn core_main() -> Option<Vec<String>> {
         }
         i += 1;
     }
+    #[cfg(windows)]
+    if args.is_empty() && crate::get_app_name().starts_with("Tekniq ") {
+        let terminated = crate::platform::terminate_stale_same_name_processes();
+        if terminated > 0 {
+            log::info!("closed {terminated} stale Tekniq process(es) before startup");
+        }
+    }
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     if args.is_empty() {
         #[cfg(target_os = "linux")]

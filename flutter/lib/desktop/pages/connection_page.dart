@@ -188,6 +188,25 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
 }
 
 /// Connection page for connecting to a remote peer.
+const _tekniqSavedCustomersKey = 'tekniq-saved-customers-v1';
+const _tekniqSavedCustomersLimit = 30;
+
+class _TekniqSavedCustomer {
+  const _TekniqSavedCustomer({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  factory _TekniqSavedCustomer.fromJson(Map<String, dynamic> json) {
+    return _TekniqSavedCustomer(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+    );
+  }
+
+  Map<String, String> toJson() => {'id': id, 'name': name};
+}
+
 class ConnectionPage extends StatefulWidget {
   const ConnectionPage({Key? key}) : super(key: key);
 
@@ -204,6 +223,8 @@ class _ConnectionPageState extends State<ConnectionPage>
   final RxBool _idInputFocused = false.obs;
   final FocusNode _idFocusNode = FocusNode();
   final TextEditingController _idEditingController = TextEditingController();
+  final TextEditingController _customerNameController = TextEditingController();
+  List<_TekniqSavedCustomer> _savedCustomers = [];
 
   String selectedConnectionType = 'Connect';
 
@@ -219,6 +240,9 @@ class _ConnectionPageState extends State<ConnectionPage>
   @override
   void initState() {
     super.initState();
+    if (isTekniqOperator) {
+      _loadSavedCustomers();
+    }
     _allPeersLoader.init(setState);
     _idFocusNode.addListener(onFocusChanged);
     if (_idController.text.isEmpty) {
@@ -244,6 +268,7 @@ class _ConnectionPageState extends State<ConnectionPage>
     _idFocusNode.removeListener(onFocusChanged);
     _idFocusNode.dispose();
     _idEditingController.dispose();
+    _customerNameController.dispose();
     if (Get.isRegistered<IDTextEditingController>()) {
       Get.delete<IDTextEditingController>();
     }
@@ -301,6 +326,79 @@ class _ConnectionPageState extends State<ConnectionPage>
     }
   }
 
+  void _loadSavedCustomers() {
+    final value = bind.mainGetLocalOption(key: _tekniqSavedCustomersKey);
+    if (value.isEmpty) return;
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is List) {
+        _savedCustomers = decoded
+            .whereType<Map>()
+            .map((item) => _TekniqSavedCustomer.fromJson(
+                  Map<String, dynamic>.from(item),
+                ))
+            .where((customer) => customer.id.isNotEmpty)
+            .take(_tekniqSavedCustomersLimit)
+            .toList();
+      }
+    } catch (_) {
+      _savedCustomers = [];
+    }
+  }
+
+  Future<void> _saveCustomers() async {
+    await bind.mainSetLocalOption(
+      key: _tekniqSavedCustomersKey,
+      value: jsonEncode(
+          _savedCustomers.map((customer) => customer.toJson()).toList()),
+    );
+  }
+
+  Future<void> _rememberCurrentCustomer(String id) async {
+    final cleanId = id.replaceAll(' ', '').trim();
+    final enteredName = _customerNameController.text.trim();
+    if (cleanId.isEmpty || enteredName.isEmpty) return;
+
+    final existing =
+        _savedCustomers.indexWhere((customer) => customer.id == cleanId);
+    setState(() {
+      if (existing >= 0) {
+        _savedCustomers.removeAt(existing);
+      }
+      _savedCustomers.insert(
+        0,
+        _TekniqSavedCustomer(id: cleanId, name: enteredName),
+      );
+      if (_savedCustomers.length > _tekniqSavedCustomersLimit) {
+        _savedCustomers =
+            _savedCustomers.take(_tekniqSavedCustomersLimit).toList();
+      }
+    });
+    await _saveCustomers();
+  }
+
+  void _selectSavedCustomer(_TekniqSavedCustomer customer) {
+    setState(() {
+      _idController.id = customer.id;
+      updateTextAndPreserveSelection(_idEditingController, _idController.text);
+      _customerNameController.text = customer.name;
+    });
+  }
+
+  Future<void> _removeSavedCustomer(_TekniqSavedCustomer customer) async {
+    setState(() {
+      _savedCustomers.removeWhere((item) => item.id == customer.id);
+    });
+    await _saveCustomers();
+  }
+
+  String _formatSavedCustomerId(String id) {
+    final clean = id.replaceAll(' ', '');
+    return clean
+        .replaceAllMapped(RegExp(r'.{1,3}'), (match) => '${match.group(0)} ')
+        .trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isTekniqOperator) {
@@ -330,122 +428,247 @@ class _ConnectionPageState extends State<ConnectionPage>
 
   Widget _buildTekniqOperatorPage(BuildContext context) {
     const background = Color(0xFF0B1120);
+    updateTextAndPreserveSelection(_idEditingController, _idController.text);
+
+    return Container(
+      color: background,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 820;
+          final form = _buildTekniqConnectionForm();
+          final saved = _buildTekniqSavedCustomers();
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(36),
+            child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(minHeight: constraints.maxHeight - 72),
+              child: compact
+                  ? Column(
+                      children: [form, const SizedBox(height: 28), saved],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 260, child: saved),
+                        const SizedBox(width: 42),
+                        Expanded(child: Center(child: form)),
+                      ],
+                    ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTekniqConnectionForm() {
     const surface = Color(0xFF111827);
     const border = Color(0xFF334155);
     const yellow = Color(0xFFF8BF00);
     const text = Color(0xFFEEF3FB);
     const muted = Color(0xFF9AA8BA);
-    updateTextAndPreserveSelection(_idEditingController, _idController.text);
 
-    return Container(
-      color: background,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(48),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/tekniq-mark.png',
-                      width: 64,
-                      height: 64,
-                      filterQuality: FilterQuality.high,
-                    ),
-                    const SizedBox(width: 18),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tekniq Beheer',
-                          style: TextStyle(
-                            color: text,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          'Hulp op afstand',
-                          style: TextStyle(color: muted, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 48),
-                const Text(
-                  'Voer de code van de klant in',
-                  style: TextStyle(
-                    color: text,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _idEditingController,
-                  focusNode: _idFocusNode,
-                  autofocus: true,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  keyboardType: TextInputType.visiblePassword,
-                  inputFormatters: [IDTextInputFormatter()],
-                  onChanged: (value) => _idController.id = value,
-                  onSubmitted: (_) => onConnect(),
-                  style: const TextStyle(
-                    color: text,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Bijvoorbeeld 456 296 776',
-                    hintStyle: const TextStyle(color: muted, fontSize: 18),
-                    filled: true,
-                    fillColor: surface,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 20,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: border),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: yellow, width: 2),
-                      borderRadius: BorderRadius.circular(14),
+    InputDecoration fieldDecoration(String hint) => InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: muted, fontSize: 16),
+          filled: true,
+          fillColor: surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: border),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: yellow, width: 2),
+            borderRadius: BorderRadius.circular(14),
+          ),
+        );
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Image.asset(
+                'assets/tekniq-mark.png',
+                width: 64,
+                height: 64,
+                filterQuality: FilterQuality.high,
+              ),
+              const SizedBox(width: 18),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tekniq Beheer',
+                    style: TextStyle(
+                      color: text,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                FilledButton(
-                  onPressed: onConnect,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: yellow,
-                    foregroundColor: const Color(0xFF17120A),
-                    minimumSize: const Size.fromHeight(58),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                  Text(
+                    'Hulp op afstand',
+                    style: TextStyle(color: muted, fontSize: 14),
                   ),
-                  child: const Text(
-                    'Verbinden',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'De klant hoeft alleen de verbinding toe te staan. Er is geen wachtwoord nodig.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: muted, fontSize: 13, height: 1.4),
-                ),
-              ],
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 42),
+          const Text(
+            'Klant verbinden',
+            style: TextStyle(
+                color: text, fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _customerNameController,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.words,
+            style: const TextStyle(color: text, fontSize: 17),
+            decoration: fieldDecoration('Naam klant (optioneel)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _idEditingController,
+            focusNode: _idFocusNode,
+            autofocus: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            keyboardType: TextInputType.visiblePassword,
+            inputFormatters: [IDTextInputFormatter()],
+            onChanged: (value) => _idController.id = value,
+            onSubmitted: (_) => onConnect(),
+            style: const TextStyle(
+              color: text,
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+            ),
+            decoration: fieldDecoration('Bijvoorbeeld 456 296 776'),
+          ),
+          const SizedBox(height: 18),
+          FilledButton(
+            onPressed: onConnect,
+            style: FilledButton.styleFrom(
+              backgroundColor: yellow,
+              foregroundColor: const Color(0xFF17120A),
+              minimumSize: const Size.fromHeight(58),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            child: const Text(
+              'Verbinden',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
           ),
-        ),
+          const SizedBox(height: 18),
+          const Text(
+            'Vul een naam in om deze klant automatisch te bewaren.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: muted, fontSize: 13, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTekniqSavedCustomers() {
+    const panel = Color(0xFF111827);
+    const border = Color(0xFF334155);
+    const text = Color(0xFFEEF3FB);
+    const muted = Color(0xFF9AA8BA);
+    const yellow = Color(0xFFF8BF00);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: panel,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Opgeslagen klanten',
+            style: TextStyle(
+                color: text, fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Klik op een klant om het nummer in te vullen.',
+            style: TextStyle(color: muted, fontSize: 12, height: 1.35),
+          ),
+          const SizedBox(height: 16),
+          if (_savedCustomers.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Nog geen klanten bewaard.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: muted, fontSize: 13),
+              ),
+            )
+          else
+            ..._savedCustomers.map(
+              (customer) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Material(
+                  color: const Color(0xFF172033),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _selectSavedCustomer(customer),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person_outline_rounded,
+                              color: yellow, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  customer.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: text,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  _formatSavedCustomerId(customer.id),
+                                  style: const TextStyle(
+                                      color: muted, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Verwijderen',
+                            onPressed: () => _removeSavedCustomer(customer),
+                            icon: const Icon(Icons.close_rounded,
+                                color: muted, size: 18),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -457,6 +680,9 @@ class _ConnectionPageState extends State<ConnectionPage>
       bool isViewCamera = false,
       bool isTerminal = false}) {
     var id = _idController.id;
+    if (isTekniqOperator) {
+      _rememberCurrentCustomer(id);
+    }
     connect(context, id,
         isFileTransfer: isFileTransfer,
         isViewCamera: isViewCamera,

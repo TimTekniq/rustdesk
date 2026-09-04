@@ -1501,6 +1501,10 @@ impl<T: InvokeUiSession> Session<T> {
                         match data {
                             crate::ipc::Data::SwitchSidesRequest(str_uuid) => {
                                 if let Ok(uuid) = Uuid::from_str(&str_uuid) {
+                                    log::info!(
+                                        "Tekniq switch: sending handover token for peer {}",
+                                        self.get_id()
+                                    );
                                     let mut misc = Misc::new();
                                     misc.set_switch_sides_request(SwitchSidesRequest {
                                         uuid: Bytes::from(uuid.as_bytes().to_vec()),

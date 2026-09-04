@@ -4003,6 +4003,75 @@ pub fn try_kill_rustdesk_main_window_process() -> ResultType<()> {
     bail!("failed to find rustdesk main window process");
 }
 
+/// Close older portable copies of the same Tekniq executable before a newly
+/// downloaded main window starts. RustDesk's normal duplicate-process check is
+/// path based, so copies launched from different download folders can otherwise
+/// register the same device ID at the same time.
+pub fn terminate_stale_same_name_processes() -> usize {
+    use hbb_common::sysinfo::System;
+
+    let Ok(current_exe) = std::env::current_exe() else {
+        return 0;
+    };
+    let Some(current_name) = current_exe.file_name() else {
+        return 0;
+    };
+    let current_name = current_name.to_string_lossy().to_lowercase();
+    let product_family = if current_name.starts_with("tekniqhulp") {
+        "tekniqhulp"
+    } else if current_name.starts_with("tekniqbeheer") {
+        "tekniqbeheer"
+    } else {
+        return 0;
+    };
+
+    let mut system = System::new();
+    system.refresh_processes();
+    let my_pid = std::process::id();
+    let my_uid = system
+        .process((my_pid as usize).into())
+        .map(|process| process.user_id())
+        .unwrap_or_default();
+    let mut terminated = 0;
+
+    for (_, process) in system.processes() {
+        if process.pid().as_u32() == my_pid || process.user_id() != my_uid {
+            continue;
+        }
+        let process_name = process
+            .exe()
+            .file_name()
+            .map(|name| name.to_string_lossy().to_lowercase())
+            .unwrap_or_else(|| process.name().to_lowercase());
+        // Browsers commonly save repeated downloads as e.g. "TekniqHulp (3).exe".
+        // Treat every executable in the same Tekniq product family as stale, not
+        // just a byte-for-byte filename match.
+        if !is_tekniq_product_process(product_family, &process_name) {
+            continue;
+        }
+        match nt_terminate_process(process.pid().as_u32()) {
+            Ok(()) => {
+                terminated += 1;
+                log::info!(
+                    "closed stale Tekniq process pid={} path={:?}",
+                    process.pid(),
+                    process.exe()
+                );
+            }
+            Err(error) => log::warn!(
+                "failed to close stale Tekniq process pid={}: {}",
+                process.pid(),
+                error
+            ),
+        }
+    }
+    terminated
+}
+
+fn is_tekniq_product_process(product_family: &str, process_name: &str) -> bool {
+    process_name.starts_with(product_family) && process_name.ends_with(".exe")
+}
+
 fn nt_terminate_process(process_id: DWORD) -> ResultType<()> {
     type NtTerminateProcess = unsafe extern "system" fn(HANDLE, DWORD) -> DWORD;
     unsafe {
@@ -4513,6 +4582,17 @@ pub(super) fn get_pids_with_first_arg_by_wmic<S1: AsRef<str>, S2: AsRef<str>>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tekniq_process_family_matches_repeated_download_names() {
+        assert!(is_tekniq_product_process("tekniqhulp", "tekniqhulp.exe"));
+        assert!(is_tekniq_product_process(
+            "tekniqhulp",
+            "tekniqhulp (5).exe"
+        ));
+        assert!(!is_tekniq_product_process("tekniqhulp", "tekniqbeheer.exe"));
+        assert!(!is_tekniq_product_process("tekniqhulp", "rustdesk.exe"));
+    }
 
     // Test-only reusable Win32 HANDLE RAII helper.
     // If a future non-test path needs the same pattern, move it out of this test module.

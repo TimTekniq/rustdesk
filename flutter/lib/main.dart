@@ -324,9 +324,12 @@ showCmWindow({bool isStartup = false}) async {
     await windowManager.waitUntilReadyToShow(windowOptions, null);
     bind.mainHideDock();
     if (isTekniqCustomer) {
+      // The customer should experience one support window. The connection
+      // manager temporarily replaces the code window while help is active.
+      await WindowController.fromWindowId(kWindowMainId).hide();
       await restoreWindowPosition(WindowType.Main);
       await windowManager.setSize(_connectionManagerWindowSize);
-      await windowManager.setTitle('Tekniq Hulp');
+      await windowManager.setTitle(getWindowName());
     }
     await Future.wait([
       windowManager.show(),
@@ -354,8 +357,8 @@ showCmWindow({bool isStartup = false}) async {
 
 hideCmWindow({bool isStartup = false}) async {
   if (isStartup) {
-    WindowOptions windowOptions = getHiddenTitleBarWindowOptions(
-        size: _connectionManagerWindowSize);
+    WindowOptions windowOptions =
+        getHiddenTitleBarWindowOptions(size: _connectionManagerWindowSize);
     windowManager.setOpacity(0);
     await windowManager.waitUntilReadyToShow(windowOptions, null);
     bind.mainHideDock();
