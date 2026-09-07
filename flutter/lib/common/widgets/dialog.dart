@@ -1815,10 +1815,14 @@ void showConfirmSwitchSidesDialog(
   dialogManager.show((setState, close, context) {
     submit() async {
       close();
-      await bind.sessionSwitchSides(sessionId: sessionId);
-      // The switch token is sent before the old viewer is closed. Keeping that
-      // viewer open makes the expected handover look like a peer-reset crash.
-      closeConnection(id: id);
+      try {
+        await bind.sessionSwitchSides(sessionId: sessionId);
+        // Only close after the native side has actually queued the request.
+        closeConnection(id: id);
+      } catch (error) {
+        msgBox(sessionId, 'error', 'Scherm tonen niet gelukt',
+            'De verbinding blijft open. Probeer opnieuw. ($error)', '', dialogManager);
+      }
     }
 
     if (isTekniqOperator) {

@@ -35,6 +35,7 @@ class PlatformFFI {
   late RustdeskImpl _ffiBind;
   late String _appType;
   StreamEventHandler? _eventCallback;
+  final connectionManagerError = ValueNotifier<String?>(null);
 
   PlatformFFI._();
 
@@ -132,6 +133,7 @@ class PlatformFFI {
                 // isMacOS? DynamicLibrary.open("liblibrustdesk.dylib") :
                 DynamicLibrary.process();
     debugPrint('initializing FFI $_appType');
+    var initializingTekniqCustomer = false;
     try {
       _session_get_rgba = dylib.lookupFunction<F3Dart, F3>("session_get_rgba");
       try {
@@ -218,14 +220,20 @@ class PlatformFFI {
         customClientConfig: '',
       );
       if (desktopType == DesktopType.main && isTekniqCustomer) {
+        initializingTekniqCustomer = true;
         await _ffiBind.cmInit();
         final ready = await _ffiBind.cmWaitForListener();
         if (!ready) {
-          throw StateError('Tekniq connection manager failed to start');
+          connectionManagerError.value =
+              'De hulpverbinding kon niet starten. Sluit andere exemplaren van Tekniq Hulp en open de app opnieuw.';
         }
       }
     } catch (e) {
       debugPrintStack(label: 'initialize failed: $e');
+      if (initializingTekniqCustomer) {
+        connectionManagerError.value =
+            'De hulpverbinding kon niet starten. Sluit de app en probeer opnieuw.';
+      }
     }
     version = await getVersion();
   }
@@ -255,6 +263,11 @@ class PlatformFFI {
       () async {
         try {
           Map<String, dynamic> event = json.decode(message);
+          if (event['name'] == 'cm_listener_error') {
+            connectionManagerError.value =
+                'De hulpverbinding is gestopt. Sluit de app en probeer opnieuw.';
+            return;
+          }
           // _tryHandle here may be more flexible than _eventCallback
           if (!await tryHandle(event)) {
             if (_eventCallback != null) {

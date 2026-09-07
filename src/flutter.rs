@@ -1625,8 +1625,31 @@ pub mod connection_manager {
     #[inline]
     pub fn cm_init() {
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
-        start_listen_ipc_thread();
+        {
+            if crate::get_app_name() == "Tekniq Hulp"
+                && !std::env::args().any(|arg| arg == "--cm" || arg == "--cm-no-ui")
+            {
+                static START: std::sync::Once = std::sync::Once::new();
+                START.call_once(|| {
+                    std::thread::spawn(|| {
+                        let cm = crate::ui_cm_interface::ConnectionManager {
+                            ui_handler: FlutterHandler {},
+                        };
+                        crate::ui_cm_interface::start_embedded_ipc(cm, &EMBEDDED_LISTENER);
+                        FlutterHandler {}.push_event(
+                            "cm_listener_error", &[("error", "listener stopped")],
+                        );
+                    });
+                });
+            } else {
+                start_listen_ipc_thread();
+            }
+        }
     }
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    pub static EMBEDDED_LISTENER: crate::cm_lifecycle::ListenerState =
+        crate::cm_lifecycle::ListenerState::new();
 
     #[cfg(target_os = "android")]
     use hbb_common::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};

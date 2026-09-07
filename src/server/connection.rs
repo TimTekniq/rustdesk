@@ -5874,6 +5874,21 @@ async fn start_ipc(
             stream = Some(s);
         }
     }
+    #[cfg(target_os = "windows")]
+    if stream.is_none() && crate::get_app_name() == "Tekniq Hulp" {
+        // Customer consent lives in the main window. Wait for it to initialize;
+        // never spawn an independent --cm window as a fallback.
+        for _ in 0..30 {
+            if let Ok(s) = crate::ipc::connect(100, "_cm").await {
+                stream = Some(s);
+                break;
+            }
+            sleep(0.1).await;
+        }
+        if stream.is_none() {
+            bail!("Tekniq Hulp main window is not ready to accept this connection");
+        }
+    }
     if stream.is_none() {
         #[allow(unused_mut)]
         #[allow(unused_assignments)]

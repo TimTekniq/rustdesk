@@ -834,6 +834,26 @@ impl<T: InvokeUiCM> IpcTaskRunner<T> {
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tokio::main(flavor = "current_thread")]
 pub async fn start_ipc<T: InvokeUiCM>(cm: ConnectionManager<T>) {
+    run_ipc(cm, None).await;
+    quit_cm();
+}
+
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+#[tokio::main(flavor = "current_thread")]
+pub async fn start_embedded_ipc<T: InvokeUiCM>(
+    cm: ConnectionManager<T>,
+    state: &'static crate::cm_lifecycle::ListenerState,
+) {
+    run_ipc(cm, Some(state)).await;
+    state.stopped();
+    // The main UI owns this process. Never quit it on listener failure.
+}
+
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+async fn run_ipc<T: InvokeUiCM>(
+    cm: ConnectionManager<T>,
+    state: Option<&crate::cm_lifecycle::ListenerState>,
+) {
     #[cfg(target_os = "windows")]
     {
         let enabled = crate::Connection::is_permission_enabled_locally(OPTION_ENABLE_FILE_TRANSFER);
@@ -845,6 +865,9 @@ pub async fn start_ipc<T: InvokeUiCM>(cm: ConnectionManager<T>) {
     }
     match ipc::new_listener("_cm").await {
         Ok(mut incoming) => {
+            if let Some(state) = state {
+                state.ready();
+            }
             while let Some(result) = incoming.next().await {
                 match result {
                     Ok(stream) => {
@@ -864,7 +887,6 @@ pub async fn start_ipc<T: InvokeUiCM>(cm: ConnectionManager<T>) {
             log::error!("Failed to start cm ipc server: {}", err);
         }
     }
-    quit_cm();
 }
 
 #[cfg(target_os = "android")]

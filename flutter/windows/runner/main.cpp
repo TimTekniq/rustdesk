@@ -10,6 +10,7 @@
 #include "win32_desktop.h"
 #include "flutter_window.h"
 #include "utils.h"
+#include "tekniq_window_identity.h"
 
 typedef char** (*FUNC_RUSTDESK_CORE_MAIN)(int*);
 typedef void (*FUNC_RUSTDESK_FREE_ARGS)( char**, int);
@@ -74,6 +75,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   // Uri links dispatch
   HWND hwnd = ::FindWindowW(getWindowClassName(), app_name.c_str());
+  const auto main_window_property = TekniqMainWindowProperty(app_name);
+  if (app_name == L"Tekniq Hulp" || app_name == L"Tekniq Beheer") {
+    hwnd = FindTekniqMainWindow(app_name, getWindowClassName());
+  }
   if (hwnd != NULL) {
     // Allow multiple flutter instances when being executed by parameters
     // contained in whitelists.
@@ -153,6 +158,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
   if (!window.CreateAndShow(window_title, origin, size, !is_cm_page)) {
       return EXIT_FAILURE;
+  }
+  if (!is_cm_page && !is_install_page) {
+    SetPropW(window.GetHandle(), main_window_property.c_str(), reinterpret_cast<HANDLE>(1));
   }
   window.SetQuitOnClose(true);
 

@@ -650,7 +650,7 @@ class _DesktopTabState extends State<DesktopTab>
                         Offstage(
                             offstage: !showTitle,
                             child: Text(
-                              isTekniqClient ? appName : "RustDesk",
+                              isTekniqClient ? '$appName · $tekniqBuildLabel' : "RustDesk",
                               style: TextStyle(
                                 color: isTekniqClient
                                     ? const Color(0xFFEEF3FB)

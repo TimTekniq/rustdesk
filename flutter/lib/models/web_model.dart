@@ -21,6 +21,8 @@ final List<StreamSubscription<KeyboardEvent>> keyListeners = [];
 typedef HandleEvent = Future<void> Function(Map<String, dynamic> evt);
 
 class PlatformFFI {
+  // API parity for shared widgets; web does not host a native connection manager.
+  final connectionManagerError = ValueNotifier<String?>(null);
   final _eventHandlers = <String, Map<String, HandleEvent>>{};
   final RustdeskImpl _ffiBind = RustdeskImpl();
 

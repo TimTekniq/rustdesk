@@ -3040,9 +3040,11 @@ int versionCmp(String v1, String v2) {
   return bind.versionToNumber(v: v1) - bind.versionToNumber(v: v2);
 }
 
+const tekniqBuildLabel = 'test 9';
+
 String getWindowName({WindowType? overrideType}) {
   final name = bind.mainGetAppNameSync();
-  final displayName = isTekniqClient ? '$name · test 8' : name;
+  final displayName = isTekniqClient ? '$name · $tekniqBuildLabel' : name;
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
       return displayName;

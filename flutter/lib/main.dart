@@ -139,7 +139,7 @@ void runMainApp(bool startService) async {
   checkUpdate();
   // trigger connection status updater
   await bind.mainCheckConnectStatus();
-  if (startService) {
+  if (startService && platformFFI.connectionManagerError.value == null) {
     gFFI.serverModel.startService();
     bind.pluginSyncUi(syncTo: kAppTypeMain);
     bind.pluginListReload();
@@ -153,6 +153,7 @@ void runMainApp(bool startService) async {
     alwaysOnTop =
         bind.mainGetBuildinOption(key: "main-window-always-on-top") == 'Y';
   }
+  if (isTekniqCustomer) alwaysOnTop = false;
 
   // Set window option.
   WindowOptions windowOptions = getHiddenTitleBarWindowOptions(

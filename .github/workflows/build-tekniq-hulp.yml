@@ -111,8 +111,15 @@ jobs:
             lib/desktop/pages/server_page.dart \
             lib/desktop/widgets/tabbar_widget.dart \
             lib/desktop/widgets/remote_toolbar.dart \
+            lib/desktop/widgets/tekniq_customer_panel.dart \
+            lib/models/native_model.dart \
+            lib/models/server_model.dart \
+            lib/models/model.dart \
             lib/main.dart
+          flutter test test/tekniq_customer_panel_test.dart
           popd
+          rustc --test --edition=2021 src/cm_lifecycle.rs -o /tmp/tekniq-cm-tests
+          /tmp/tekniq-cm-tests
 
   build-windows:
     needs: [generate-bridge, validate-interface]
@@ -142,8 +149,17 @@ jobs:
           path: .
 
       - name: Apply Tekniq branding
+        # Native window routing is tested before any expensive packaging work.
         shell: pwsh
         run: ./scripts/apply-tekniq-branding.ps1 -Variant '${{ matrix.variant }}'
+
+      - name: Test Windows main-window routing
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cl /nologo /EHsc /std:c++17 tests\tekniq_window_identity_test.cpp /Fe:tekniq-window-tests.exe user32.lib
+          if errorlevel 1 exit /b 1
+          tekniq-window-tests.exe
 
       - name: Generate canonical Tekniq application icon
         shell: pwsh

@@ -60,6 +60,8 @@ mod whiteboard;
 mod updater;
 
 mod ui_cm_interface;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+mod cm_lifecycle;
 mod ui_interface;
 mod ui_session_interface;
 

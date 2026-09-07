@@ -413,8 +413,12 @@ class FfiModel with ChangeNotifier {
         cancelMsgBox(evt, sessionId);
       } else if (name == 'switch_back') {
         final peer_id = evt['peer_id'].toString();
-        await bind.sessionSwitchSides(sessionId: sessionId);
-        closeConnection(id: peer_id);
+        try {
+          await bind.sessionSwitchSides(sessionId: sessionId);
+          closeConnection(id: peer_id);
+        } catch (error) {
+          debugPrint('Screen switch failed; keeping current session: $error');
+        }
       } else if (name == 'portable_service_running') {
         _handlePortableServiceRunning(peerId, evt);
       } else if (name == 'on_url_scheme_received') {

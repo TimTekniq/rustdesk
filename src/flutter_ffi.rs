@@ -908,10 +908,11 @@ pub fn session_elevate_with_logon(session_id: SessionID, username: String, passw
     }
 }
 
-pub fn session_switch_sides(session_id: SessionID) {
+pub fn session_switch_sides(session_id: SessionID) -> ResultType<()> {
     if let Some(session) = sessions::get_session_by_session_id(&session_id) {
-        session.switch_sides();
+        return session.switch_sides();
     }
+    hbb_common::bail!("The session is no longer connected");
 }
 
 pub fn session_change_resolution(session_id: SessionID, display: i32, width: i32, height: i32) {
@@ -2444,21 +2445,8 @@ pub fn cm_init() {
 pub fn cm_wait_for_listener() -> bool {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        let Ok(runtime) = hbb_common::tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-        else {
-            return false;
-        };
-        return runtime.block_on(async {
-            for _ in 0..40 {
-                if crate::ipc::connect(50, "_cm").await.is_ok() {
-                    return true;
-                }
-                hbb_common::tokio::time::sleep(Duration::from_millis(25)).await;
-            }
-            false
-        });
+        return crate::flutter::connection_manager::EMBEDDED_LISTENER
+            .wait_ready(Duration::from_secs(3));
     }
     #[allow(unreachable_code)]
     false

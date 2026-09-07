@@ -1484,46 +1484,36 @@ impl<T: InvokeUiSession> Session<T> {
     }
 
     #[cfg(any(target_os = "android", target_os = "ios", not(feature = "flutter")))]
-    pub fn switch_sides(&self) {}
+    pub fn switch_sides(&self) -> hbb_common::ResultType<()> {
+        hbb_common::bail!("Screen switching is not supported on this platform");
+    }
 
     #[cfg(feature = "flutter")]
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     #[tokio::main(flavor = "current_thread")]
-    pub async fn switch_sides(&self) {
-        match crate::ipc::connect(1000, "").await {
-            Ok(mut conn) => {
-                if conn
-                    .send(&crate::ipc::Data::SwitchSidesRequest(self.get_id()))
-                    .await
-                    .is_ok()
-                {
-                    if let Ok(Some(data)) = conn.next_timeout(1000).await {
-                        match data {
-                            crate::ipc::Data::SwitchSidesRequest(str_uuid) => {
-                                if let Ok(uuid) = Uuid::from_str(&str_uuid) {
-                                    log::info!(
-                                        "Tekniq switch: sending handover token for peer {}",
-                                        self.get_id()
-                                    );
-                                    let mut misc = Misc::new();
-                                    misc.set_switch_sides_request(SwitchSidesRequest {
-                                        uuid: Bytes::from(uuid.as_bytes().to_vec()),
-                                        ..Default::default()
-                                    });
-                                    let mut msg_out = Message::new();
-                                    msg_out.set_misc(misc);
-                                    self.send(Data::Message(msg_out));
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-            Err(err) => {
-                log::info!("server not started (will try to start): {}", err);
-            }
-        }
+    pub async fn switch_sides(&self) -> hbb_common::ResultType<()> {
+        let mut conn = crate::ipc::connect(1000, "").await?;
+        conn.send(&crate::ipc::Data::SwitchSidesRequest(self.get_id())).await?;
+        let Some(crate::ipc::Data::SwitchSidesRequest(str_uuid)) =
+            conn.next_timeout(1000).await? else {
+                hbb_common::bail!("No screen-switch token received from the local server");
+            };
+        let uuid = Uuid::from_str(&str_uuid)?;
+        let mut misc = Misc::new();
+        misc.set_switch_sides_request(SwitchSidesRequest {
+            uuid: Bytes::from(uuid.as_bytes().to_vec()),
+            ..Default::default()
+        });
+        let mut msg_out = Message::new();
+        msg_out.set_misc(misc);
+        let sender = self.sender.read().unwrap();
+        let Some(sender) = sender.as_ref() else {
+            hbb_common::bail!("The session is no longer connected");
+        };
+        sender.send(Data::Message(msg_out))
+            .map_err(|_| hbb_common::anyhow::anyhow!("The session is no longer connected"))?;
+        log::info!("Tekniq switch: queued handover request for peer {}", self.get_id());
+        Ok(())
     }
 
     fn set_custom_resolution(&self, display: &SwitchDisplay) {

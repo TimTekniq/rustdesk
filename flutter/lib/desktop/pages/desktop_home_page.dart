@@ -25,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:window_size/window_size.dart' as window_size;
 import '../widgets/button.dart';
+import '../widgets/tekniq_customer_panel.dart';
 
 class DesktopHomePage extends StatefulWidget {
   const DesktopHomePage({Key? key}) : super(key: key);
@@ -78,220 +79,34 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget buildTekniqCustomerPage(BuildContext context) {
-    const background = Color(0xFF0B1120);
-    const ink = Color(0xFFEEF3FB);
-    const muted = Color(0xFF9AA8BA);
-    const surface = Color(0xFF111827);
-    const border = Color(0xFF334155);
-    const brand = Color(0xFFF8BF00);
-
     return ChangeNotifierProvider.value(
       value: gFFI.serverModel,
-      child: Consumer<ServerModel>(
-        builder: (context, model, child) {
-          final id = model.serverId.text.trim();
-          final ready = id.isNotEmpty;
-          final client = model.clients.isEmpty ? null : model.clients.first;
-          final awaitingApproval =
-              client != null && !client.authorized && !client.disconnected;
-          final active =
-              client != null && client.authorized && !client.disconnected;
-
-          return Container(
-            color: background,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(42, 28, 42, 30),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            'assets/tekniq-mark.png',
-                            width: 54,
-                            height: 54,
-                            filterQuality: FilterQuality.high,
-                          ),
-                          const SizedBox(width: 14),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Tekniq Hulp',
-                                style: TextStyle(
-                                  color: ink,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                'Veilige hulp op afstand',
-                                style: TextStyle(color: muted, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 26),
-                      Text(
-                        awaitingApproval
-                            ? 'Een Tekniq-medewerker wil helpen'
-                            : active
-                                ? client!.fromSwitch
-                                    ? 'Tekniq toont nu een scherm'
-                                    : 'Tekniq helpt nu mee'
-                                : 'Geef alleen deze code door aan uw Tekniq-medewerker.',
-                        style: TextStyle(
-                          color: ink,
-                          fontSize: awaitingApproval || active ? 22 : 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: awaitingApproval || active
-                            ? TextAlign.center
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        decoration: BoxDecoration(
-                          color: surface,
-                          border: Border.all(color: border),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: awaitingApproval || active
-                              ? CrossAxisAlignment.stretch
-                              : CrossAxisAlignment.start,
-                          children: [
-                            if (awaitingApproval || active) ...[
-                              Icon(
-                                active
-                                    ? Icons.verified_user_rounded
-                                    : Icons.support_agent_rounded,
-                                color: brand,
-                                size: 42,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                awaitingApproval
-                                    ? 'Sta deze verbinding eenmalig toe. U houdt altijd zelf de controle.'
-                                    : 'De verbinding is actief. U kunt de hulp hieronder direct stoppen.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: muted,
-                                  fontSize: 14,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ] else ...[
-                              const Text(
-                                'UW CODE',
-                                style: TextStyle(
-                                  color: muted,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              SelectableText(
-                                id.isEmpty ? 'Even geduld…' : id,
-                                style: const TextStyle(
-                                  color: ink,
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (!awaitingApproval && !active) ...[
-                        Row(
-                          children: [
-                            Container(
-                              width: 9,
-                              height: 9,
-                              decoration: BoxDecoration(
-                                color: ready ? const Color(0xFF12B76A) : brand,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              ready
-                                  ? 'Klaar voor verbinding'
-                                  : 'Verbinding voorbereiden…',
-                              style:
-                                  const TextStyle(color: muted, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 22),
-                      ],
-                      FilledButton(
-                        onPressed: awaitingApproval
-                            ? () => model.sendLoginResponse(client!, true)
-                            : active
-                                ? () =>
-                                    bind.cmCloseConnection(connId: client!.id)
-                                : () {
-                                    SystemNavigator.pop();
-                                    if (isWindows) {
-                                      exit(0);
-                                    }
-                                  },
-                        style: FilledButton.styleFrom(
-                          backgroundColor:
-                              active ? const Color(0xFF9F2424) : brand,
-                          foregroundColor:
-                              active ? ink : const Color(0xFF17120A),
-                          minimumSize: const Size.fromHeight(54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          awaitingApproval
-                              ? 'Hulp toestaan'
-                              : 'Hulp beëindigen',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      if (!awaitingApproval)
-                        const Text(
-                          'Sluit documenten die niet nodig zijn. U kunt de hulp altijd stoppen met de knop hierboven.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: muted, fontSize: 12, height: 1.4),
-                        ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Gebaseerd op RustDesk · Broncode en privacy: help.tekniq.nl/hulp-op-afstand',
-                        textAlign: TextAlign.center,
-                        style:
-                            TextStyle(color: Color(0xFF6F7E93), fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+      child: Consumer<ServerModel>(builder: (context, model, child) {
+        final candidates = model.clients.where((c) => !c.disconnected).toList();
+        final pending = candidates.where((c) => !c.authorized);
+        final client = pending.isNotEmpty ? pending.first : (candidates.isEmpty ? null : candidates.first);
+        return ValueListenableBuilder<String?>(
+          valueListenable: platformFFI.connectionManagerError,
+          builder: (context, error, child) => TekniqCustomerPanel(
+            id: model.serverId.text.trim(),
+            ready: error == null && model.connectStatus > 0,
+            error: error,
+            awaitingApproval: error == null && client != null && !client.authorized,
+            active: error == null && client != null && client.authorized,
+            fromSwitch: client?.fromSwitch ?? false,
+            onAccept: () { if (client != null) model.sendLoginResponse(client, true); },
+            onReject: () { if (client != null) model.sendLoginResponse(client, false); },
+            onStop: () {
+              if (client != null && error == null) {
+                model.closeAll();
+              } else {
+                SystemNavigator.pop();
+                if (isWindows) exit(0);
+              }
+            },
+          ),
+        );
+      }),
     );
   }
 

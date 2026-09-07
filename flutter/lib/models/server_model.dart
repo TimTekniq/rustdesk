@@ -574,7 +574,9 @@ class ServerModel with ChangeNotifier {
           .indexWhere((c) => c.disconnected && c.peerId == client.peerId);
       if (index_disconnected >= 0) {
         _clients.removeAt(index_disconnected);
-        tabController.remove(index_disconnected);
+        if (!(desktopType == DesktopType.main && isTekniqCustomer)) {
+          tabController.remove(index_disconnected);
+        }
       }
       if (desktopType == DesktopType.cm && !hideCm) {
         showCmWindow();
@@ -589,6 +591,12 @@ class ServerModel with ChangeNotifier {
   }
 
   void _addTab(Client client) {
+    if (desktopType == DesktopType.main && isTekniqCustomer) {
+      // The main page renders the client state directly. CM tabs and their
+      // focus/minimize timers belong only to the separate connection manager.
+      parent.target?.chatModel.updateConnIdOfKey(MessageKey(client.peerId, client.id));
+      return;
+    }
     tabController.add(TabInfo(
         key: client.id.toString(),
         label: client.name,
@@ -707,8 +715,11 @@ class ServerModel with ChangeNotifier {
       bind.cmLoginRes(connId: client.id, res: res);
       parent.target?.invokeMethod("cancel_notification", client.id);
       final index = _clients.indexOf(client);
-      tabController.remove(index);
+      if (!(desktopType == DesktopType.main && isTekniqCustomer)) {
+        tabController.remove(index);
+      }
       _clients.remove(client);
+      notifyListeners();
       if (isAndroid) androidUpdatekeepScreenOn();
     }
   }
@@ -727,7 +738,9 @@ class ServerModel with ChangeNotifier {
               unawaited(bind.cmRemoveDisconnectedConnection(connId: id));
             }
             _clients.removeAt(index);
-            tabController.remove(index);
+            if (!(desktopType == DesktopType.main && isTekniqCustomer)) {
+              tabController.remove(index);
+            }
           } else {
             _clients[index].disconnected = true;
           }
@@ -751,6 +764,7 @@ class ServerModel with ChangeNotifier {
     _clients.clear();
     tabController.state.value.tabs.clear();
     if (isAndroid) androidUpdatekeepScreenOn();
+    notifyListeners();
   }
 
   void jumpTo(int id) {
